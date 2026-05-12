@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Freshman Algebra Assignment Builder</title>
+    <title>Student Assignment | Freshman Algebra</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="app-header">
       <div>
         <p class="eyebrow">Algebra I</p>
-        <h1>Linear Equations Assignment</h1>
+        <h1>Student Assignment</h1>
       </div>
       <div class="header-stats" aria-label="Assignment summary">
         <span><strong id="header-problem-count">30</strong> problems</span>
@@ -19,16 +19,16 @@
     </header>
 
     <main class="app-shell">
-      <nav class="tabs" aria-label="App views">
-        <button class="tab-button is-active" type="button" data-view="student-view">
+      <nav class="tabs" aria-label="App pages">
+        <a class="tab-button is-active" href="index.html" aria-current="page">
           Student Workspace
-        </button>
-        <button class="tab-button" type="button" data-view="teacher-view">
+        </a>
+        <a class="tab-button" href="teacher.html">
           Teacher Dashboard
-        </button>
+        </a>
       </nav>
 
-      <section class="view is-active" id="student-view" aria-labelledby="student-heading">
+      <section aria-labelledby="student-heading">
         <div class="workspace-grid">
           <aside class="student-panel" aria-label="Student information">
             <h2 id="student-heading">Student</h2>
@@ -66,55 +66,6 @@
               </div>
             </div>
             <div class="problem-list" id="problem-list"></div>
-          </section>
-        </div>
-      </section>
-
-      <section class="view" id="teacher-view" aria-labelledby="teacher-heading">
-        <div class="dashboard-grid">
-          <section class="dashboard-summary" aria-label="Class summary">
-            <div>
-              <p class="eyebrow">Teacher</p>
-              <h2 id="teacher-heading">Class Dashboard</h2>
-            </div>
-            <div class="summary-metrics">
-              <div>
-                <span>Submitted</span>
-                <strong id="submitted-count">0 / 30</strong>
-              </div>
-              <div>
-                <span>Class Average</span>
-                <strong id="class-average">--</strong>
-              </div>
-              <div>
-                <span>Highest</span>
-                <strong id="highest-score">--</strong>
-              </div>
-            </div>
-          </section>
-
-          <section class="dashboard-table-wrap" aria-label="Submitted grades">
-            <div class="table-actions">
-              <h3>Roster</h3>
-              <button class="secondary-button" id="reset-dashboard" type="button">
-                Clear Submissions
-              </button>
-            </div>
-            <div class="table-scroll">
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">Student</th>
-                    <th scope="col">ID</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Score</th>
-                    <th scope="col">Grade</th>
-                    <th scope="col">Submitted</th>
-                  </tr>
-                </thead>
-                <tbody id="dashboard-body"></tbody>
-              </table>
-            </div>
           </section>
         </div>
       </section>

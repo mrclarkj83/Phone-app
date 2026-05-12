@@ -53,12 +53,22 @@ const elements = {
   submittedCount: document.querySelector("#submitted-count"),
   classAverage: document.querySelector("#class-average"),
   highestScore: document.querySelector("#highest-score"),
+  refreshDashboard: document.querySelector("#refresh-dashboard"),
   resetDashboard: document.querySelector("#reset-dashboard"),
-  tabButtons: document.querySelectorAll(".tab-button"),
-  views: document.querySelectorAll(".view"),
   headerProblemCount: document.querySelector("#header-problem-count"),
   headerStudentCount: document.querySelector("#header-student-count"),
 };
+
+function setText(element, value) {
+  if (element) {
+    element.textContent = value;
+  }
+}
+
+function renderHeaderCounts() {
+  setText(elements.headerProblemCount, PROBLEM_COUNT);
+  setText(elements.headerStudentCount, roster.length);
+}
 
 function hashString(value) {
   let hash = 2166136261;
@@ -223,15 +233,17 @@ function saveSubmissions() {
 }
 
 function renderStudentOptions() {
+  if (!elements.studentSelect || !elements.studentId) return;
+
   elements.studentSelect.innerHTML = roster
     .map((student) => `<option value="${student.id}">${student.name}</option>`)
     .join("");
   elements.studentId.value = state.selectedStudent.id;
-  elements.headerProblemCount.textContent = PROBLEM_COUNT;
-  elements.headerStudentCount.textContent = roster.length;
 }
 
 function loadSelectedStudent() {
+  if (!elements.studentSelect || !elements.studentId) return;
+
   const student = roster.find((item) => item.id === elements.studentSelect.value) || roster[0];
   state.selectedStudent = student;
   elements.studentId.value = student.id;
@@ -245,6 +257,8 @@ function loadSelectedStudent() {
 }
 
 function renderProblems() {
+  if (!elements.problemList) return;
+
   if (!state.problems.length) {
     elements.problemList.innerHTML = `<div class="empty-state">Select a student and load the assignment.</div>`;
     return;
@@ -298,6 +312,8 @@ function getProblemResult(problem) {
 }
 
 function updateProblemFeedback(problemId) {
+  if (!elements.problemList) return;
+
   const problem = state.problems.find((item) => item.id === problemId);
   const card = elements.problemList.querySelector(`[data-problem-id="${problemId}"]`);
   const feedback = elements.problemList.querySelector(`[data-feedback="${problemId}"]`);
@@ -327,6 +343,15 @@ function calculateScore() {
 }
 
 function updateStudentScore() {
+  if (
+    !elements.currentScore ||
+    !elements.currentPercent ||
+    !elements.answeredCount ||
+    !elements.correctCount
+  ) {
+    return;
+  }
+
   const score = calculateScore();
   elements.currentScore.textContent = `${score.correct} / ${PROBLEM_COUNT}`;
   elements.currentPercent.textContent = `${score.percent}%`;
@@ -348,11 +373,18 @@ function submitAssignment() {
     submittedAt: new Date().toISOString(),
   };
   saveSubmissions();
-  renderDashboard();
-  elements.submissionNote.textContent = `Submitted: ${score.correct} out of ${PROBLEM_COUNT} (${score.percent}%).`;
+  if (elements.dashboardBody) {
+    renderDashboard();
+  }
+  setText(
+    elements.submissionNote,
+    `Submitted: ${score.correct} out of ${PROBLEM_COUNT} (${score.percent}%).`,
+  );
 }
 
 function renderDashboard() {
+  if (!elements.dashboardBody) return;
+
   const rows = roster.map((student) => {
     const submission = state.submissions[student.id];
     const submittedAt = submission
@@ -388,9 +420,14 @@ function renderDashboard() {
     ? Math.max(...submissions.map((item) => item.percent))
     : null;
 
-  elements.submittedCount.textContent = `${submittedCount} / ${roster.length}`;
-  elements.classAverage.textContent = average === null ? "--" : `${average}%`;
-  elements.highestScore.textContent = highest === null ? "--" : `${highest}%`;
+  setText(elements.submittedCount, `${submittedCount} / ${roster.length}`);
+  setText(elements.classAverage, average === null ? "--" : `${average}%`);
+  setText(elements.highestScore, highest === null ? "--" : `${highest}%`);
+}
+
+function refreshDashboard() {
+  state.submissions = loadSubmissions();
+  renderDashboard();
 }
 
 function resetDashboard() {
@@ -402,42 +439,41 @@ function resetDashboard() {
   renderDashboard();
 }
 
-function switchView(viewId) {
-  elements.tabButtons.forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.view === viewId);
-  });
-  elements.views.forEach((view) => {
-    view.classList.toggle("is-active", view.id === viewId);
-  });
-}
-
 function bindEvents() {
-  elements.studentSelect.addEventListener("change", () => {
-    const student = roster.find((item) => item.id === elements.studentSelect.value);
-    if (!student) return;
-    state.selectedStudent = student;
-    elements.studentId.value = student.id;
-  });
+  if (elements.studentSelect && elements.studentId) {
+    elements.studentSelect.addEventListener("change", () => {
+      const student = roster.find((item) => item.id === elements.studentSelect.value);
+      if (!student) return;
+      state.selectedStudent = student;
+      elements.studentId.value = student.id;
+    });
 
-  elements.studentId.addEventListener("input", () => {
-    const matchingStudent = roster.find(
-      (student) => student.id.toLowerCase() === elements.studentId.value.trim().toLowerCase(),
-    );
-    if (!matchingStudent) return;
-    state.selectedStudent = matchingStudent;
-    elements.studentSelect.value = matchingStudent.id;
-  });
+    elements.studentId.addEventListener("input", () => {
+      const matchingStudent = roster.find(
+        (student) => student.id.toLowerCase() === elements.studentId.value.trim().toLowerCase(),
+      );
+      if (!matchingStudent) return;
+      state.selectedStudent = matchingStudent;
+      elements.studentSelect.value = matchingStudent.id;
+    });
+  }
 
-  elements.loadAssignment.addEventListener("click", loadSelectedStudent);
-  elements.submitAssignment.addEventListener("click", submitAssignment);
-  elements.resetDashboard.addEventListener("click", resetDashboard);
-
-  elements.tabButtons.forEach((button) => {
-    button.addEventListener("click", () => switchView(button.dataset.view));
-  });
+  if (elements.loadAssignment) {
+    elements.loadAssignment.addEventListener("click", loadSelectedStudent);
+  }
+  if (elements.submitAssignment) {
+    elements.submitAssignment.addEventListener("click", submitAssignment);
+  }
+  if (elements.refreshDashboard) {
+    elements.refreshDashboard.addEventListener("click", refreshDashboard);
+  }
+  if (elements.resetDashboard) {
+    elements.resetDashboard.addEventListener("click", resetDashboard);
+  }
 }
 
 function init() {
+  renderHeaderCounts();
   renderStudentOptions();
   renderProblems();
   renderDashboard();

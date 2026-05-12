@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Teacher Dashboard | Freshman Algebra</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Algebra I</p>
+        <h1>Teacher Dashboard</h1>
+      </div>
+      <div class="header-stats" aria-label="Assignment summary">
+        <span><strong id="header-problem-count">30</strong> problems</span>
+        <span><strong id="header-student-count">25</strong> students</span>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <nav class="tabs" aria-label="App pages">
+        <a class="tab-button" href="index.html">
+          Student Workspace
+        </a>
+        <a class="tab-button is-active" href="teacher.html" aria-current="page">
+          Teacher Dashboard
+        </a>
+      </nav>
+
+      <section aria-labelledby="teacher-heading">
+        <div class="dashboard-grid">
+          <section class="dashboard-summary" aria-label="Class summary">
+            <div>
+              <p class="eyebrow">Teacher</p>
+              <h2 id="teacher-heading">Class Dashboard</h2>
+            </div>
+            <div class="summary-metrics">
+              <div>
+                <span>Submitted</span>
+                <strong id="submitted-count">0 / 25</strong>
+              </div>
+              <div>
+                <span>Class Average</span>
+                <strong id="class-average">--</strong>
+              </div>
+              <div>
+                <span>Highest</span>
+                <strong id="highest-score">--</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="dashboard-table-wrap" aria-label="Submitted grades">
+            <div class="table-actions">
+              <h3>Roster</h3>
+              <div class="table-buttons">
+                <button class="secondary-button" id="refresh-dashboard" type="button">
+                  Refresh
+                </button>
+                <button class="secondary-button" id="reset-dashboard" type="button">
+                  Clear Submissions
+                </button>
+              </div>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Student</th>
+                    <th scope="col">ID</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Score</th>
+                    <th scope="col">Grade</th>
+                    <th scope="col">Submitted</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboard-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
