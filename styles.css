@@ -240,10 +240,15 @@ button:focus-visible {
 
 .mini-metrics span {
   min-width: 104px;
-  padding: 8px 10ppx;
+  padding: 8px 10px;
   border-radius: 999px;
   background: #f1f5f7;
   text-align: center;
+}
+
+.system-equations {
+  display: grid;
+  gap: 4px;
 }
 
 .problem-list {
@@ -307,6 +312,22 @@ button:focus-visible {
   min-width: 0;
 }
 
+.answer-row.is-pair {
+  grid-template-columns: minmax(78px, 1fr) minmax(78px, 1fr) minmax(110px, auto);
+}
+
+.answer-field {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.answer-field span {
+  color: var(--ink);
+  font-weight: 900;
+}
+
 .feedback {
   min-height: 35px;
   display: grid;
@@ -346,9 +367,16 @@ button:focus-visible {
 
 .dashboard-summary {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 20px;
   padding: 18px;
+}
+
+.dashboard-controls {
+  display: grid;
+  gap: 6px;
+  min-width: min(260px, 100%);
 }
 
 .summary-metrics {
@@ -471,6 +499,10 @@ tbody tr:hover {
   }
 
   .answer-row {
+    grid-template-columns: 1fr;
+  }
+
+  .answer-row.is-pair {
     grid-template-columns: 1fr;
   }
 }
