@@ -100,44 +100,6 @@ button {
   padding: 18px clamp(14px, 4vw, 40px) 36px;
 }
 
-.tabs {
-  display: inline-flex;
-  min-height: 44px;
-  padding: 4px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-  box-shadow: 0 8px 20px rgba(35, 48, 57, 0.05);
-}
-
-.tab-button {
-  display: grid;
-  place-items: center;
-  min-width: 180px;
-  min-height: 36px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--muted);
-  font-weight: 800;
-  text-align: center;
-  text-decoration: none;
-}
-
-.tab-button.is-active {
-  background: var(--accent);
-  color: #fff;
-}
-
-.view {
-  display: none;
-  margin-top: 18px;
-}
-
-.view.is-active {
-  display: block;
-}
-
 .workspace-grid {
   display: grid;
   grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
@@ -482,20 +444,6 @@ tbody tr:hover {
 
   .student-panel {
     position: static;
-  }
-
-  .tabs,
-  .tab-button {
-    width: 100%;
-  }
-
-  .tabs {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .tab-button {
-    min-width: 0;
   }
 
   .summary-metrics {
