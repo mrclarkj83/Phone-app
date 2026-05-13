@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Teacher Dashboard | DragonMath</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=20260513-2" />
   </head>
   <body data-page="teacher">
     <header class="app-header">
@@ -31,8 +31,12 @@
 
     <main class="app-shell">
       <nav class="tabs" aria-label="App pages">
-        <a class="tab-button" href="index.html">Student Workspace</a>
-        <a class="tab-button is-active" href="teacher.html" aria-current="page">Teacher Dashboard</a>
+        <a class="tab-button" href="index.html">
+          Student Workspace
+        </a>
+        <a class="tab-button is-active" href="teacher.html" aria-current="page">
+          Teacher Dashboard
+        </a>
       </nav>
 
       <section class="status-banner" id="teacher-note" aria-live="polite">
@@ -51,10 +55,22 @@
               <select id="dashboard-assignment-select" disabled></select>
             </div>
             <div class="summary-metrics">
-              <div><span>Submitted</span><strong id="submitted-count">0 / 25</strong></div>
-              <div><span>Class Average</span><strong id="class-average">--</strong></div>
-              <div><span>Highest</span><strong id="highest-score">--</strong></div>
-              <div><span>Last Update</span><strong id="last-update">--</strong></div>
+              <div>
+                <span>Submitted</span>
+                <strong id="submitted-count">0 / 25</strong>
+              </div>
+              <div>
+                <span>Class Average</span>
+                <strong id="class-average">--</strong>
+              </div>
+              <div>
+                <span>Highest</span>
+                <strong id="highest-score">--</strong>
+              </div>
+              <div>
+                <span>Last Update</span>
+                <strong id="last-update">--</strong>
+              </div>
             </div>
           </section>
 
@@ -65,9 +81,15 @@
                 <h3>Student Results</h3>
               </div>
               <div class="table-buttons">
-                <button class="secondary-button" id="refresh-dashboard" type="button" disabled>Refresh</button>
-                <button class="secondary-button" id="export-dashboard" type="button" disabled>Export CSV</button>
-                <button class="danger-button" id="reset-dashboard" type="button" disabled>Clear Submissions</button>
+                <button class="secondary-button" id="refresh-dashboard" type="button" disabled>
+                  Refresh
+                </button>
+                <button class="secondary-button" id="export-dashboard" type="button" disabled>
+                  Export CSV
+                </button>
+                <button class="danger-button" id="reset-dashboard" type="button" disabled>
+                  Clear Submissions
+                </button>
               </div>
             </div>
             <div class="table-scroll">
@@ -92,6 +114,6 @@
       </section>
     </main>
 
-    <script type="module" src="app.js"></script>
+    <script type="module" src="app.js?v=20260513-2"></script>
   </body>
 </html>

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Student Assignment | DragonMath</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=20260513-2" />
   </head>
   <body data-page="student">
     <header class="app-header">
@@ -31,8 +31,12 @@
 
     <main class="app-shell">
       <nav class="tabs" aria-label="App pages">
-        <a class="tab-button is-active" href="index.html" aria-current="page">Student Workspace</a>
-        <a class="tab-button" href="teacher.html">Teacher Dashboard</a>
+        <a class="tab-button is-active" href="index.html" aria-current="page">
+          Student Workspace
+        </a>
+        <a class="tab-button" href="teacher.html">
+          Teacher Dashboard
+        </a>
       </nav>
 
       <section class="status-banner" id="student-cloud-note" aria-live="polite">
@@ -59,7 +63,9 @@
             <label for="student-email">Roster Email</label>
             <input id="student-email" type="email" autocomplete="off" readonly />
 
-            <button class="primary-button" id="load-assignment" type="button" disabled>Load Assignment</button>
+            <button class="primary-button" id="load-assignment" type="button" disabled>
+              Load Assignment
+            </button>
 
             <div class="score-box" aria-live="polite">
               <span>Current score</span>
@@ -72,11 +78,13 @@
               <strong id="save-state">Not started</strong>
             </div>
 
-            <button class="submit-button" id="submit-assignment" type="button" disabled>Submit Grade</button>
+            <button class="submit-button" id="submit-assignment" type="button" disabled>
+              Submit Grade
+            </button>
             <p class="submission-note" id="submission-note"></p>
           </aside>
 
-          <section class="assignment-panel" aria-label="Algebra problems">
+          <section class="assignment-panel" aria-label="Linear equation problems">
             <div class="assignment-toolbar">
               <div>
                 <p class="eyebrow" id="assignment-directions">Solve for x</p>
@@ -93,6 +101,6 @@
       </section>
     </main>
 
-    <script type="module" src="app.js"></script>
+    <script type="module" src="app.js?v=20260513-2"></script>
   </body>
 </html>
