@@ -14,7 +14,7 @@
       </div>
       <div class="header-stats" aria-label="Assignment summary">
         <span><strong id="header-problem-count">30</strong> problems</span>
-        <span><strong id="header-student-count">25</strong> students</span>
+        <span><strong id="header-student-count">24</strong> students</span>
       </div>
     </header>
 
@@ -26,14 +26,20 @@
             <label for="assignment-select">Assignment</label>
             <select id="assignment-select"></select>
 
-            <label for="student-select">Name</label>
-            <select id="student-select"></select>
-
             <label for="student-id">Student ID</label>
-            <input id="student-id" type="text" autocomplete="off" />
+            <input
+              id="student-id"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              maxlength="9"
+              autocomplete="off"
+              aria-describedby="student-access-note"
+            />
+            <p class="access-note" id="student-access-note" aria-live="polite"></p>
 
             <button class="primary-button" id="load-assignment" type="button">
-              Load Assignment
+              Access Worksheets
             </button>
 
             <div class="score-box" aria-live="polite">
@@ -52,7 +58,7 @@
             <div class="assignment-toolbar">
               <div>
                 <p class="eyebrow" id="assignment-directions">Solve for x</p>
-                <h2 id="assignment-title">Choose a student to begin</h2>
+                <h2 id="assignment-title">Enter your student ID to begin</h2>
               </div>
               <div class="mini-metrics">
                 <span id="answered-count">0 answered</span>

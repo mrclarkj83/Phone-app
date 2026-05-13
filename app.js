@@ -1,6 +1,7 @@
 const LINEAR_ASSIGNMENT_ID = "linear-equations-doral-v1";
-const STORAGE_KEY = "freshman-algebra-linear-dashboard-doral-v1";
+const STORAGE_KEY = "freshman-algebra-linear-dashboard-doral-v2";
 const ANSWER_TOLERANCE = 0.0001;
+const ACCESS_HASH_SALT = "freshman-algebra-doral-id-v1";
 
 const assignments = [
   {
@@ -24,36 +25,131 @@ const assignments = [
 ];
 
 const roster = [
-  { id: "S1001", name: "Amaya Solbes" },
-  { id: "S1002", name: "Austin Davis" },
-  { id: "S1003", name: "Camila Lopez" },
-  { id: "S1004", name: "Tony Mkhitaryan" },
-  { id: "S1005", name: "Emme Nguyen" },
-  { id: "S1006", name: "Brilynn Moates" },
-  { id: "S1007", name: "Elias Terry" },
-  { id: "S1008", name: "Raevyn Moore" },
-  { id: "S1009", name: "Madison Osborn" },
-  { id: "S1010", name: "Antony Stoev" },
-  { id: "S1011", name: "Capri Vickers" },
-  { id: "S1012", name: "Joshua Hearne" },
-  { id: "S1013", name: "Lillian Akers" },
-  { id: "S1014", name: "Zoe Tomlinson" },
-  { id: "S1015", name: "Zaim Ishola" },
-  { id: "S1016", name: "Presley Peterson" },
-  { id: "S1017", name: "Evan Hernandez" },
-  { id: "S1018", name: "Mason Peraza" },
-  { id: "S1019", name: "Melia Mosley" },
-  { id: "S1020", name: "Rayden Canda" },
-  { id: "S1021", name: "Julian Pitura" },
-  { id: "S1022", name: "Elijan Rosas" },
-  { id: "S1023", name: "Madyson Jezbera" },
-  { id: "S1024", name: "Naol Kassaya" },
-  { id: "S1025", name: "Gabriella Novo" },
+  {
+    key: "akers-lillian",
+    name: "Lillian Akers",
+    accessHash: "dcf4289b3363df6ddfbc2e17d440a6542c0a1cf5a6a2cf783250e8683244d70c",
+  },
+  {
+    key: "canda-rayden",
+    name: "Rayden Canda",
+    accessHash: "6c77a26797d9cf2c35b3c8cd0656a207e403ad7f485e63be3818e3846b756ecc",
+  },
+  {
+    key: "davis-austin",
+    name: "Austin Davis",
+    accessHash: "56c064ffa17e9135caafb8cfa8b30471db7448eddfe420598ed7a93d50e7ed85",
+  },
+  {
+    key: "hearne-joshua",
+    name: "Joshua Hearne",
+    accessHash: "bca251d043f8f4f9b5ed4306a72d1a04fbe26a22a532343ece6c3afd8697d373",
+  },
+  {
+    key: "ishola-zaim",
+    name: "Zaim Ishola",
+    accessHash: "33903a8a2dd9001452791961615dae052df0f9c29a42114435126a5ec7930b57",
+  },
+  {
+    key: "jezbera-madyson",
+    name: "Madyson Jezbera",
+    accessHash: "a4492b8a0949fb6bd800fbd9069165ff2855f9ff34e8a9d23c894a475b837caf",
+  },
+  {
+    key: "kassaya-naol",
+    name: "Naol Kassaya",
+    accessHash: "ad3ddf18829e56f70f45ebd7b6a00e59798001387169b405235f16e85e301bb6",
+  },
+  {
+    key: "lopez-camila",
+    name: "Camila Lopez",
+    accessHash: "a7d610db14a238d65541c85bc1acc18bcb91bec6fab3dc0bf531400fdd2b1c79",
+  },
+  {
+    key: "mkhitaryan-tony",
+    name: "Tony Mkhitaryan",
+    accessHash: "13b2acb575b192664537c961f75d1e3da2b68ec2a0fd850fb1e14a6b4b8e465a",
+  },
+  {
+    key: "moates-brilynn",
+    name: "Brilynn Moates",
+    accessHash: "a286f5251b9c061a01a38912b43c02c4674be985b7da2adb6ce29059f85dcd1c",
+  },
+  {
+    key: "moore-raevyn",
+    name: "Raevyn Moore",
+    accessHash: "76cc5e66cbee03b3e5abd3b6bd69ef32dcb589e429e5704f00912e671367dd74",
+  },
+  {
+    key: "mosley-melia",
+    name: "Melia Mosley",
+    accessHash: "c79e9e11ece3672fb8fb06157061ec5997321aa7ccdbad4fecc672f95b66efd0",
+  },
+  {
+    key: "nguyen-emme",
+    name: "Emme Nguyen",
+    accessHash: "7bfdf23602cd2fa847eb8cae265051934c6c9b5514b12c4a04110ce710af000c",
+  },
+  {
+    key: "novo-gabriella",
+    name: "Gabriella Novo",
+    accessHash: "70633a433e1c20417daef946bdfaf5a1b052a99f67f1f29f93ec8f95ca8c4287",
+  },
+  {
+    key: "osborn-madison",
+    name: "Madison Osborn (Maddie)",
+    accessHash: "10eb5155bb3aad6c949de9ce64e23f73924bad7963346b6629f77911e577dd57",
+  },
+  {
+    key: "peraza-mason",
+    name: "Mason Peraza",
+    accessHash: "a7ec436cefe0c7d8341d0ce352edde803db124bca422381903159ec13039f1fb",
+  },
+  {
+    key: "peterson-presley",
+    name: "Presley Peterson",
+    accessHash: "00d8fa15ea5cfcffbe0ff17ab786487c556ce716d8e5dba70b588c1b9c5afd01",
+  },
+  {
+    key: "pitura-julian",
+    name: "Julian Pitura (Jude)",
+    accessHash: "855b350d4fc90dd9edbeeb0751ede166da9ad994776ec4dcbc7d01ba5dad8a26",
+  },
+  {
+    key: "rosas-elijan",
+    name: "Elijan Rosas",
+    accessHash: "36cb3ac06d17bcd8221a3f87558c26caeb0432ea7e6910d8b69ad62fa2915533",
+  },
+  {
+    key: "solbes-amaya",
+    name: "Amaya Solbes",
+    accessHash: "1aa46dcb795f6b6ca193bf8e4b1f40205170d97cdd479de870e198a69db593c0",
+  },
+  {
+    key: "stoev-antony",
+    name: "Antony Stoev (Tony)",
+    accessHash: "903dda2c16a3d58e51633eaa44fc71c532734d90701157405d21e7d4400ce903",
+  },
+  {
+    key: "terry-elias",
+    name: "Elias Terry (Eli)",
+    accessHash: "61fdbaeb4e5ce523a68a16a9dfdbfb10fc328d471b961854c3f0c55d1249133d",
+  },
+  {
+    key: "tomlinson-zoe",
+    name: "Zoe Tomlinson",
+    accessHash: "1d80d56123fe854e91a5570f87ee82ae5d613cfd46e844faaa4707f2820ef8b7",
+  },
+  {
+    key: "vickers-capri",
+    name: "Capri Vickers",
+    accessHash: "c23a9fe4d7b969aa51330de048696805e460e42715493b33322adabcb01a9981",
+  },
 ].sort(compareStudentsByLastName);
 
 const state = {
   selectedAssignment: assignments[0],
-  selectedStudent: roster[0],
+  selectedStudent: null,
   problems: [],
   answers: new Map(),
   submissions: loadSubmissions(),
@@ -62,8 +158,8 @@ const state = {
 const elements = {
   assignmentSelect: document.querySelector("#assignment-select"),
   dashboardAssignmentSelect: document.querySelector("#dashboard-assignment-select"),
-  studentSelect: document.querySelector("#student-select"),
   studentId: document.querySelector("#student-id"),
+  accessNote: document.querySelector("#student-access-note"),
   loadAssignment: document.querySelector("#load-assignment"),
   submitAssignment: document.querySelector("#submit-assignment"),
   problemList: document.querySelector("#problem-list"),
@@ -96,6 +192,31 @@ function setText(element, value) {
   if (element) {
     element.textContent = value;
   }
+}
+
+function normalizeStudentId(value) {
+  return value.replace(/\D/g, "").slice(0, 9);
+}
+
+async function sha256Hex(value) {
+  const data = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function findStudentByAccessCode(accessCode) {
+  const accessHash = await sha256Hex(`${ACCESS_HASH_SALT}:${accessCode}`);
+  return roster.find((student) => student.accessHash === accessHash) || null;
+}
+
+function setAccessNote(message, status = "") {
+  if (!elements.accessNote) return;
+
+  elements.accessNote.textContent = message;
+  elements.accessNote.classList.toggle("is-error", status === "error");
+  elements.accessNote.classList.toggle("is-success", status === "success");
 }
 
 function getSelectedAssignment() {
@@ -286,13 +407,13 @@ function makeSystemProblem(random) {
 }
 
 function makeProblem(assignment, student, problemNumber, attempt = 0) {
-  const seedText = `${assignment.id}:${student.id}:${student.name}:${problemNumber}:${attempt}`;
+  const seedText = `${assignment.id}:${student.key}:${student.name}:${problemNumber}:${attempt}`;
   const random = mulberry32(hashString(seedText));
   const problem = assignment.generator(random);
   return {
     ...problem,
     answerType: assignment.answerType,
-    id: `${assignment.id}-${student.id}-${problemNumber}`,
+    id: `${assignment.id}-${student.key}-${problemNumber}`,
     number: problemNumber,
   };
 }
@@ -386,19 +507,30 @@ function renderAssignmentOptions() {
   }
 }
 
-function renderStudentOptions() {
-  if (!elements.studentSelect || !elements.studentId) return;
+function renderStudentAccess() {
+  if (!elements.studentId) return;
 
-  elements.studentSelect.innerHTML = roster
-    .map((student) => `<option value="${student.id}">${student.name}</option>`)
-    .join("");
-  elements.studentId.value = state.selectedStudent.id;
+  elements.studentId.value = "";
+  setAccessNote("");
 }
 
 function updateAssignmentDisplay() {
   const assignment = getSelectedAssignment();
   setText(elements.assignmentDirections, assignment.directions);
   renderHeaderCounts();
+}
+
+function resetStudentWorkspace(title = "Enter your student ID to begin") {
+  state.selectedStudent = null;
+  state.problems = [];
+  state.answers = new Map();
+  setText(elements.assignmentTitle, title);
+  setText(elements.submissionNote, "");
+  if (elements.submitAssignment) {
+    elements.submitAssignment.disabled = true;
+  }
+  renderProblems();
+  updateStudentScore();
 }
 
 function selectAssignment(assignmentId, options = {}) {
@@ -413,32 +545,50 @@ function selectAssignment(assignmentId, options = {}) {
   updateAssignmentDisplay();
 
   if (options.resetStudentWork) {
-    state.problems = [];
-    state.answers = new Map();
-    setText(elements.assignmentTitle, "Choose a student to begin");
-    setText(elements.submissionNote, "");
-    if (elements.submitAssignment) {
-      elements.submitAssignment.disabled = true;
-    }
-    renderProblems();
-    updateStudentScore();
+    setAccessNote("");
+    resetStudentWorkspace();
   }
 
   renderDashboard();
 }
 
-function loadSelectedStudent() {
-  if (!elements.studentSelect || !elements.studentId) return;
+async function loadSelectedStudent() {
+  if (!elements.studentId) return;
 
   const assignment = getSelectedAssignment();
-  const student = roster.find((item) => item.id === elements.studentSelect.value) || roster[0];
+  const accessCode = normalizeStudentId(elements.studentId.value);
+  elements.studentId.value = accessCode;
+
+  if (accessCode.length !== 9) {
+    resetStudentWorkspace();
+    setAccessNote("Use the full 9-digit student ID.", "error");
+    return;
+  }
+
+  let student = null;
+  try {
+    student = await findStudentByAccessCode(accessCode);
+  } catch {
+    resetStudentWorkspace("Access check unavailable");
+    setAccessNote("Open this page from GitHub Pages or localhost and try again.", "error");
+    return;
+  }
+
+  if (!student) {
+    resetStudentWorkspace("Student ID not found");
+    setAccessNote("Check the number and try again.", "error");
+    return;
+  }
+
   state.selectedStudent = student;
-  elements.studentId.value = student.id;
   state.problems = generateAssignment(student, assignment);
   state.answers = new Map();
   elements.assignmentTitle.textContent = `${student.name}'s ${assignment.problemCount} ${assignment.title.toLowerCase()} problems`;
-  elements.submissionNote.textContent = "";
-  elements.submitAssignment.disabled = false;
+  setText(elements.submissionNote, "");
+  setAccessNote(`Access granted for ${student.name}.`, "success");
+  if (elements.submitAssignment) {
+    elements.submitAssignment.disabled = false;
+  }
   renderProblems();
   updateStudentScore();
 }
@@ -497,7 +647,7 @@ function renderProblems() {
   if (!elements.problemList) return;
 
   if (!state.problems.length) {
-    elements.problemList.innerHTML = `<div class="empty-state">Select a student and load the selected assignment.</div>`;
+    elements.problemList.innerHTML = `<div class="empty-state">Enter your student ID to load the selected assignment.</div>`;
     return;
   }
 
@@ -630,10 +780,10 @@ function submitAssignment() {
     state.submissions[assignment.id] = {};
   }
 
-  state.submissions[assignment.id][state.selectedStudent.id] = {
+  state.submissions[assignment.id][state.selectedStudent.key] = {
     assignmentId: assignment.id,
     assignmentTitle: assignment.title,
-    studentId: state.selectedStudent.id,
+    studentKey: state.selectedStudent.key,
     name: state.selectedStudent.name,
     correct: score.correct,
     total: assignment.problemCount,
@@ -657,7 +807,7 @@ function renderDashboard() {
   const assignment = getSelectedAssignment();
   const assignmentSubmissions = state.submissions[assignment.id] || {};
   const rows = roster.map((student) => {
-    const submission = assignmentSubmissions[student.id];
+    const submission = assignmentSubmissions[student.key];
     const submittedAt = submission
       ? new Intl.DateTimeFormat(undefined, {
           dateStyle: "short",
@@ -667,7 +817,6 @@ function renderDashboard() {
     return `
       <tr>
         <td>${student.name}</td>
-        <td>${student.id}</td>
         <td>
           <span class="status-pill ${submission ? "is-submitted" : ""}">
             ${submission ? "Submitted" : "Waiting"}
@@ -724,21 +873,24 @@ function bindEvents() {
     });
   }
 
-  if (elements.studentSelect && elements.studentId) {
-    elements.studentSelect.addEventListener("change", () => {
-      const student = roster.find((item) => item.id === elements.studentSelect.value);
-      if (!student) return;
-      state.selectedStudent = student;
-      elements.studentId.value = student.id;
+  if (elements.studentId) {
+    elements.studentId.addEventListener("input", () => {
+      const normalizedValue = normalizeStudentId(elements.studentId.value);
+      if (elements.studentId.value !== normalizedValue) {
+        elements.studentId.value = normalizedValue;
+      }
+
+      setAccessNote("");
+      if (state.selectedStudent) {
+        resetStudentWorkspace();
+      }
     });
 
-    elements.studentId.addEventListener("input", () => {
-      const matchingStudent = roster.find(
-        (student) => student.id.toLowerCase() === elements.studentId.value.trim().toLowerCase(),
-      );
-      if (!matchingStudent) return;
-      state.selectedStudent = matchingStudent;
-      elements.studentSelect.value = matchingStudent.id;
+    elements.studentId.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        loadSelectedStudent();
+      }
     });
   }
 
@@ -759,7 +911,7 @@ function bindEvents() {
 function init() {
   renderAssignmentOptions();
   updateAssignmentDisplay();
-  renderStudentOptions();
+  renderStudentAccess();
   renderProblems();
   updateStudentScore();
   renderDashboard();

@@ -219,6 +219,23 @@ button:focus-visible {
   line-height: 1.35;
 }
 
+.access-note {
+  min-height: 20px;
+  margin: -4px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.access-note.is-error {
+  color: var(--bad);
+}
+
+.access-note.is-success {
+  color: var(--good);
+}
+
 .assignment-panel {
   overflow: hidden;
 }
@@ -420,7 +437,7 @@ button:focus-visible {
 
 table {
   width: 100%;
-  min-width: 780px;
+  min-width: 700px;
   border-collapse: collapse;
 }
 
