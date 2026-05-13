@@ -1,0 +1,85 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isRosterStudent() {
+      return signedIn() && request.auth.token.email in [
+        "amaya.solbes@student.doralacademynv.org",
+        "austin.davis@student.doralacademynv.org",
+        "camila.lopez@student.doralacademynv.org",
+        "tony.mkhitaryan@student.doralacademynv.org",
+        "emme.nguyen@student.doralacademynv.org",
+        "brilynn.moates@student.doralacademynv.org",
+        "elias.terry@student.doralacademynv.org",
+        "raevyn.moore@student.doralacademynv.org",
+        "madison.osborn@student.doralacademynv.org",
+        "antony.stoev@student.doralacademynv.org",
+        "capri.vickers@student.doralacademynv.org",
+        "joshua.hearne@student.doralacademynv.org",
+        "lillian.akers@student.doralacademynv.org",
+        "zoe.tomlinson@student.doralacademynv.org",
+        "zaim.ishola@student.doralacademynv.org",
+        "presley.peterson@student.doralacademynv.org",
+        "evan.hernandez@student.doralacademynv.org",
+        "mason.peraza@student.doralacademynv.org",
+        "melia.mosley@student.doralacademynv.org",
+        "rayden.canda@student.doralacademynv.org",
+        "julian.pitura@student.doralacademynv.org",
+        "elijan.rosas@student.doralacademynv.org",
+        "madyson.jezbera@student.doralacademynv.org",
+        "naol.kassaya@student.doralacademynv.org",
+        "gabriella.novo@student.doralacademynv.org"
+      ];
+    }
+
+    function isTeacher() {
+      return signedIn() && !isRosterStudent();
+    }
+
+    function canReadOwnRosterDoc(assignmentId, studentId) {
+      return signedIn() && (
+        !exists(/databases/$(database)/documents/assignments/$(assignmentId)/submissions/$(studentId)) ||
+        resource.data.studentEmail == request.auth.token.email ||
+        resource.data.uid == request.auth.uid
+      );
+    }
+
+    function canWriteOwnRosterDoc() {
+      return signedIn() && (
+        request.resource.data.studentEmail == request.auth.token.email ||
+        request.resource.data.uid == request.auth.uid
+      );
+    }
+
+    match /assignments/{assignmentId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isTeacher();
+
+      match /progress/{studentId} {
+        allow get: if isTeacher() ||
+          (
+            signedIn() &&
+            (
+              !exists(/databases/$(database)/documents/assignments/$(assignmentId)/progress/$(studentId)) ||
+              resource.data.studentEmail == request.auth.token.email ||
+              resource.data.uid == request.auth.uid
+            )
+          );
+        allow list: if isTeacher();
+        allow create, update: if isTeacher() || canWriteOwnRosterDoc();
+        allow delete: if isTeacher();
+      }
+
+      match /submissions/{studentId} {
+        allow get: if isTeacher() || canReadOwnRosterDoc(assignmentId, studentId);
+        allow list: if isTeacher();
+        allow create, update: if isTeacher() || canWriteOwnRosterDoc();
+        allow delete: if isTeacher();
+      }
+    }
+  }
+}

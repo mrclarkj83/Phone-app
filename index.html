@@ -3,38 +3,63 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Student Assignment | Freshman Algebra</title>
+    <title>Student Assignment | DragonMath</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
+  <body data-page="student">
     <header class="app-header">
       <div>
-        <p class="eyebrow">Algebra I</p>
+        <p class="eyebrow">DragonMath Algebra I</p>
         <h1>Student Assignment</h1>
       </div>
-      <div class="header-stats" aria-label="Assignment summary">
-        <span><strong id="header-problem-count">30</strong> problems</span>
-        <span><strong id="header-student-count">25</strong> students</span>
+      <div class="header-stack">
+        <div class="header-stats" aria-label="Assignment summary">
+          <span><strong id="header-problem-count">30</strong> problems</span>
+          <span><strong id="header-student-count">25</strong> students</span>
+        </div>
+        <div class="auth-strip" aria-label="Google account">
+          <span class="auth-dot" id="auth-dot" aria-hidden="true"></span>
+          <div>
+            <strong id="auth-name">Checking sign-in</strong>
+            <small id="auth-email">Google authentication</small>
+          </div>
+          <button class="light-button" id="sign-in-button" type="button">Sign in</button>
+          <button class="light-button" id="sign-out-button" type="button" hidden>Sign out</button>
+        </div>
       </div>
     </header>
 
     <main class="app-shell">
+      <nav class="tabs" aria-label="App pages">
+        <a class="tab-button is-active" href="index.html" aria-current="page">Student Workspace</a>
+        <a class="tab-button" href="teacher.html">Teacher Dashboard</a>
+      </nav>
+
+      <section class="status-banner" id="student-cloud-note" aria-live="polite">
+        Sign in with Google to begin.
+      </section>
+
       <section aria-labelledby="student-heading">
         <div class="workspace-grid">
           <aside class="student-panel" aria-label="Student information">
-            <h2 id="student-heading">Student</h2>
+            <div>
+              <p class="eyebrow">Linear Equations</p>
+              <h2 id="student-heading">Student</h2>
+            </div>
+
             <label for="assignment-select">Assignment</label>
-            <select id="assignment-select"></select>
+            <select id="assignment-select" disabled></select>
 
             <label for="student-select">Name</label>
-            <select id="student-select"></select>
+            <select id="student-select" disabled></select>
 
             <label for="student-id">Student ID</label>
-            <input id="student-id" type="text" autocomplete="off" />
+            <input id="student-id" type="text" autocomplete="off" readonly />
 
-            <button class="primary-button" id="load-assignment" type="button">
-              Load Assignment
-            </button>
+            <label for="student-email">Roster Email</label>
+            <input id="student-email" type="email" autocomplete="off" readonly />
+
+            <button class="primary-button" id="load-assignment" type="button" disabled>Load Assignment</button>
 
             <div class="score-box" aria-live="polite">
               <span>Current score</span>
@@ -42,13 +67,16 @@
               <small id="current-percent">0%</small>
             </div>
 
-            <button class="submit-button" id="submit-assignment" type="button" disabled>
-              Submit Grade
-            </button>
+            <div class="save-box">
+              <span>Cloud save</span>
+              <strong id="save-state">Not started</strong>
+            </div>
+
+            <button class="submit-button" id="submit-assignment" type="button" disabled>Submit Grade</button>
             <p class="submission-note" id="submission-note"></p>
           </aside>
 
-          <section class="assignment-panel" aria-label="Linear equation problems">
+          <section class="assignment-panel" aria-label="Algebra problems">
             <div class="assignment-toolbar">
               <div>
                 <p class="eyebrow" id="assignment-directions">Solve for x</p>
@@ -65,6 +93,6 @@
       </section>
     </main>
 
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
   </body>
 </html>

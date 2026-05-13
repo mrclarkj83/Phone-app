@@ -3,59 +3,71 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Teacher Dashboard | Freshman Algebra</title>
+    <title>Teacher Dashboard | DragonMath</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
+  <body data-page="teacher">
     <header class="app-header">
       <div>
-        <p class="eyebrow">Algebra I</p>
+        <p class="eyebrow">DragonMath Algebra I</p>
         <h1>Teacher Dashboard</h1>
       </div>
-      <div class="header-stats" aria-label="Assignment summary">
-        <span><strong id="header-problem-count">30</strong> problems</span>
-        <span><strong id="header-student-count">25</strong> students</span>
+      <div class="header-stack">
+        <div class="header-stats" aria-label="Assignment summary">
+          <span><strong id="header-problem-count">30</strong> problems</span>
+          <span><strong id="header-student-count">25</strong> students</span>
+        </div>
+        <div class="auth-strip" aria-label="Google account">
+          <span class="auth-dot" id="auth-dot" aria-hidden="true"></span>
+          <div>
+            <strong id="auth-name">Checking sign-in</strong>
+            <small id="auth-email">Google authentication</small>
+          </div>
+          <button class="light-button" id="sign-in-button" type="button">Sign in</button>
+          <button class="light-button" id="sign-out-button" type="button" hidden>Sign out</button>
+        </div>
       </div>
     </header>
 
     <main class="app-shell">
+      <nav class="tabs" aria-label="App pages">
+        <a class="tab-button" href="index.html">Student Workspace</a>
+        <a class="tab-button is-active" href="teacher.html" aria-current="page">Teacher Dashboard</a>
+      </nav>
+
+      <section class="status-banner" id="teacher-note" aria-live="polite">
+        Sign in with Google to view live grades.
+      </section>
+
       <section aria-labelledby="teacher-heading">
         <div class="dashboard-grid">
           <section class="dashboard-summary" aria-label="Class summary">
             <div>
-              <p class="eyebrow">Teacher</p>
-              <h2 id="teacher-heading">Class Dashboard</h2>
+              <p class="eyebrow">Live Class Data</p>
+              <h2 id="teacher-heading">Linear Equations</h2>
             </div>
             <div class="dashboard-controls">
               <label for="dashboard-assignment-select">Assignment</label>
-              <select id="dashboard-assignment-select"></select>
+              <select id="dashboard-assignment-select" disabled></select>
             </div>
             <div class="summary-metrics">
-              <div>
-                <span>Submitted</span>
-                <strong id="submitted-count">0 / 25</strong>
-              </div>
-              <div>
-                <span>Class Average</span>
-                <strong id="class-average">--</strong>
-              </div>
-              <div>
-                <span>Highest</span>
-                <strong id="highest-score">--</strong>
-              </div>
+              <div><span>Submitted</span><strong id="submitted-count">0 / 25</strong></div>
+              <div><span>Class Average</span><strong id="class-average">--</strong></div>
+              <div><span>Highest</span><strong id="highest-score">--</strong></div>
+              <div><span>Last Update</span><strong id="last-update">--</strong></div>
             </div>
           </section>
 
           <section class="dashboard-table-wrap" aria-label="Submitted grades">
             <div class="table-actions">
-              <h3>Roster</h3>
+              <div>
+                <p class="eyebrow">Roster</p>
+                <h3>Student Results</h3>
+              </div>
               <div class="table-buttons">
-                <button class="secondary-button" id="refresh-dashboard" type="button">
-                  Refresh
-                </button>
-                <button class="secondary-button" id="reset-dashboard" type="button">
-                  Clear Submissions
-                </button>
+                <button class="secondary-button" id="refresh-dashboard" type="button" disabled>Refresh</button>
+                <button class="secondary-button" id="export-dashboard" type="button" disabled>Export CSV</button>
+                <button class="danger-button" id="reset-dashboard" type="button" disabled>Clear Submissions</button>
               </div>
             </div>
             <div class="table-scroll">
@@ -67,7 +79,9 @@
                     <th scope="col">Status</th>
                     <th scope="col">Score</th>
                     <th scope="col">Grade</th>
+                    <th scope="col">Answered</th>
                     <th scope="col">Submitted</th>
+                    <th scope="col">Report</th>
                   </tr>
                 </thead>
                 <tbody id="dashboard-body"></tbody>
@@ -78,6 +92,6 @@
       </section>
     </main>
 
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
   </body>
 </html>
