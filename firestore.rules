@@ -37,21 +37,20 @@ service cloud.firestore {
     }
 
     function isTeacher() {
-      return signedIn() && !isRosterStudent();
+      return signedIn() && request.auth.token.email == "joseph.clark@doralacademynv.org";
     }
 
     function canReadOwnRosterDoc(assignmentId, studentId) {
       return signedIn() && (
         !exists(/databases/$(database)/documents/assignments/$(assignmentId)/submissions/$(studentId)) ||
-        resource.data.studentEmail == request.auth.token.email ||
-        resource.data.uid == request.auth.uid
+        resource.data.studentEmail == request.auth.token.email
       );
     }
 
-    function canWriteOwnRosterDoc() {
+    function canWriteOwnRosterDoc(studentId) {
       return signedIn() && (
-        request.resource.data.studentEmail == request.auth.token.email ||
-        request.resource.data.uid == request.auth.uid
+        request.resource.data.studentId == studentId &&
+        request.resource.data.studentEmail == request.auth.token.email
       );
     }
 
@@ -65,19 +64,18 @@ service cloud.firestore {
             signedIn() &&
             (
               !exists(/databases/$(database)/documents/assignments/$(assignmentId)/progress/$(studentId)) ||
-              resource.data.studentEmail == request.auth.token.email ||
-              resource.data.uid == request.auth.uid
+              resource.data.studentEmail == request.auth.token.email
             )
           );
         allow list: if isTeacher();
-        allow create, update: if isTeacher() || canWriteOwnRosterDoc();
+        allow create, update: if isTeacher() || canWriteOwnRosterDoc(studentId);
         allow delete: if isTeacher();
       }
 
       match /submissions/{studentId} {
         allow get: if isTeacher() || canReadOwnRosterDoc(assignmentId, studentId);
         allow list: if isTeacher();
-        allow create, update: if isTeacher() || canWriteOwnRosterDoc();
+        allow create, update: if isTeacher() || canWriteOwnRosterDoc(studentId);
         allow delete: if isTeacher();
       }
     }
