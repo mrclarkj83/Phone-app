@@ -2,7 +2,7 @@ async function loadDragonMath() {
   let moduleUrl;
 
   try {
-    const response = await fetch(new URL("app.bundle.gz.b64?v=20260514-2", import.meta.url), {
+    const response = await fetch(new URL("app.bundle.gz.b64?v=20260514-3", import.meta.url), {
       cache: "no-store",
     });
     if (!response.ok) throw new Error("Could not load app bundle.");
