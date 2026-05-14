@@ -642,6 +642,20 @@ tbody tr.is-selected-work {
   border-radius: 8px;
   background: var(--surface);
   box-shadow: var(--shadow);
+  scroll-margin-top: 16px;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.student-work-panel:focus {
+  outline: 3px solid rgba(20, 114, 116, 0.22);
+  outline-offset: 2px;
+}
+
+.student-work-panel.is-attention {
+  border-color: rgba(20, 114, 116, 0.55);
+  box-shadow: 0 0 0 4px rgba(20, 114, 116, 0.14), var(--shadow);
 }
 
 .student-work-header {

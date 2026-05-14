@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Teacher Dashboard | DragonMath</title>
-    <link rel="stylesheet" href="styles.css?v=20260514-3" />
+    <link rel="stylesheet" href="styles.css?v=20260514-4" />
   </head>
   <body data-page="teacher">
     <header class="app-header">
@@ -65,6 +65,30 @@
             </div>
           </section>
 
+          <section
+            class="student-work-panel"
+            id="student-work-panel"
+            aria-label="Student work review"
+            tabindex="-1"
+          >
+            <div class="student-work-header">
+              <div>
+                <p class="eyebrow">Student Work</p>
+                <h3 id="student-work-title">Choose a student</h3>
+                <p id="student-work-meta">
+                  Use View Work in the roster to inspect a student's generated problems and saved
+                  answers.
+                </p>
+              </div>
+              <button class="secondary-button table-button" id="close-work-panel" type="button" hidden>
+                Close
+              </button>
+            </div>
+            <div class="student-work-problems" id="student-work-problems">
+              <div class="empty-state">No student selected.</div>
+            </div>
+          </section>
+
           <section class="dashboard-table-wrap" aria-label="Submitted grades">
             <div class="table-actions">
               <div>
@@ -102,29 +126,10 @@
               </table>
             </div>
           </section>
-
-          <section class="student-work-panel" id="student-work-panel" aria-label="Student work review">
-            <div class="student-work-header">
-              <div>
-                <p class="eyebrow">Student Work</p>
-                <h3 id="student-work-title">Choose a student</h3>
-                <p id="student-work-meta">
-                  Use View Work in the roster to inspect a student's generated problems and saved
-                  answers.
-                </p>
-              </div>
-              <button class="secondary-button table-button" id="close-work-panel" type="button" hidden>
-                Close
-              </button>
-            </div>
-            <div class="student-work-problems" id="student-work-problems">
-              <div class="empty-state">No student selected.</div>
-            </div>
-          </section>
         </div>
       </section>
     </main>
 
-    <script type="module" src="app.js?v=20260514-3"></script>
+    <script type="module" src="app.js?v=20260514-4"></script>
   </body>
 </html>
