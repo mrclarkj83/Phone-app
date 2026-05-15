@@ -6,77 +6,66 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isRosterStudent() {
-      return signedIn() && request.auth.token.email in [
-        "amaya.solbes@student.doralacademynv.org",
-        "austin.davis@student.doralacademynv.org",
-        "camila.lopez@student.doralacademynv.org",
-        "tony.mkhitaryan@student.doralacademynv.org",
-        "emme.nguyen@student.doralacademynv.org",
-        "brilynn.moates@student.doralacademynv.org",
-        "elias.terry@student.doralacademynv.org",
-        "raevyn.moore@student.doralacademynv.org",
-        "madison.osborn@student.doralacademynv.org",
-        "antony.stoev@student.doralacademynv.org",
-        "capri.vickers@student.doralacademynv.org",
-        "joshua.hearne@student.doralacademynv.org",
-        "lillian.akers@student.doralacademynv.org",
-        "zoe.tomlinson@student.doralacademynv.org",
-        "zaim.ishola@student.doralacademynv.org",
-        "presley.peterson@student.doralacademynv.org",
-        "evan.hernandez@student.doralacademynv.org",
-        "mason.peraza@student.doralacademynv.org",
-        "melia.mosley@student.doralacademynv.org",
-        "rayden.canda@student.doralacademynv.org",
-        "julian.pitura@student.doralacademynv.org",
-        "elijan.rosas@student.doralacademynv.org",
-        "madyson.jezbera@student.doralacademynv.org",
-        "naol.kassaya@student.doralacademynv.org",
-        "gabriella.novo@student.doralacademynv.org"
-      ];
+    function signedInEmail() {
+      return request.auth.token.email;
+    }
+
+    function isAdmin() {
+      return signedIn() && signedInEmail() == "joseph.clark@doralacademynv.org";
+    }
+
+    function teacherPath() {
+      return /databases/$(database)/documents/teachers/$(signedInEmail());
     }
 
     function isTeacher() {
-      return signedIn() && request.auth.token.email == "joseph.clark@doralacademynv.org";
+      return signedIn() && exists(teacherPath());
     }
 
-    function canReadOwnRosterDoc(assignmentId, studentId) {
-      return signedIn() && (
-        !exists(/databases/$(database)/documents/assignments/$(assignmentId)/submissions/$(studentId)) ||
-        resource.data.studentEmail == request.auth.token.email
-      );
+    function isAssignedTeacher(studentId) {
+      return isTeacher() && studentId in get(teacherPath()).data.studentIds;
+    }
+
+    function canReadOwnDoc(path) {
+      return signedIn() && (!exists(path) || resource.data.studentEmail == signedInEmail());
     }
 
     function canWriteOwnRosterDoc(studentId) {
-      return signedIn() && (
+      return signedIn() &&
         request.resource.data.studentId == studentId &&
-        request.resource.data.studentEmail == request.auth.token.email
-      );
+        request.resource.data.studentEmail == signedInEmail();
+    }
+
+    match /teachers/{teacherEmail} {
+      allow get: if isAdmin() || (signedIn() && teacherEmail == signedInEmail());
+      allow list, create, update, delete: if isAdmin();
+    }
+
+    match /roles/{roleEmail} {
+      allow get: if isAdmin() || (signedIn() && roleEmail == signedInEmail());
+      allow list, create, update, delete: if isAdmin();
     }
 
     match /assignments/{assignmentId} {
       allow read: if signedIn();
-      allow create, update, delete: if isTeacher();
+      allow create, update, delete: if isAdmin();
 
       match /progress/{studentId} {
-        allow get: if isTeacher() ||
-          (
-            signedIn() &&
-            (
-              !exists(/databases/$(database)/documents/assignments/$(assignmentId)/progress/$(studentId)) ||
-              resource.data.studentEmail == request.auth.token.email
-            )
-          );
-        allow list: if isTeacher();
-        allow create, update: if isTeacher() || canWriteOwnRosterDoc(studentId);
-        allow delete: if isTeacher();
+        allow get: if isAdmin() ||
+          isAssignedTeacher(studentId) ||
+          canReadOwnDoc(/databases/$(database)/documents/assignments/$(assignmentId)/progress/$(studentId));
+        allow list: if isAdmin();
+        allow create, update: if isAdmin() || canWriteOwnRosterDoc(studentId);
+        allow delete: if isAdmin();
       }
 
       match /submissions/{studentId} {
-        allow get: if isTeacher() || canReadOwnRosterDoc(assignmentId, studentId);
-        allow list: if isTeacher();
-        allow create, update: if isTeacher() || canWriteOwnRosterDoc(studentId);
-        allow delete: if isTeacher();
+        allow get: if isAdmin() ||
+          isAssignedTeacher(studentId) ||
+          canReadOwnDoc(/databases/$(database)/documents/assignments/$(assignmentId)/submissions/$(studentId));
+        allow list: if isAdmin();
+        allow create, update: if isAdmin() || canWriteOwnRosterDoc(studentId);
+        allow delete: if isAdmin();
       }
     }
   }

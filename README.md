@@ -6,16 +6,18 @@ Firebase-backed Algebra I assignment app for the Doral roster.
 
 - `index.html` is the student assignment page.
 - `teacher.html` is the live teacher dashboard.
+- `admin.html` is the admin dashboard for creating teachers and assigning students.
 
 ## Features
 
 - Google sign-in through Firebase Authentication.
 - Assignment selector with 30 linear-equation problems and a 15-problem systems set.
 - Different problem sets for each rostered student and assignment.
-- Instant correct or try-again feedback while students type.
+- Student answers save while they work; correctness and grade appear only after submission.
 - Firestore progress saves and submitted grades.
 - Firebase Storage JSON report for each submitted assignment.
-- Teacher dashboard with live class metrics, roster status, report links, CSV export, and clear-submissions control.
+- Teacher dashboard with live class metrics, assigned roster status, report links, and CSV export.
+- Admin-managed teacher records that use the shared `teacher-group` assignment set.
 
 ## Firebase
 
@@ -23,6 +25,8 @@ The app uses project `dragonmath-f6f56`.
 
 Firestore paths:
 
+- `teachers/{teacherEmail}`
+- `roles/{teacherEmail}`
 - `assignments/{assignmentId}/progress/{studentId}`
 - `assignments/{assignmentId}/submissions/{studentId}`
 
@@ -46,4 +50,5 @@ Because the app uses browser modules, test from a local server:
 python -m http.server 5173
 ```
 
-Then open `http://localhost:5173/index.html` or `http://localhost:5173/teacher.html`.
+Then open `http://localhost:5173/index.html`, `http://localhost:5173/teacher.html`, or
+`http://localhost:5173/admin.html`.
