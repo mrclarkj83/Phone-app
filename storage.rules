@@ -6,8 +6,18 @@ service firebase.storage {
       return request.auth != null;
     }
 
-    function isTeacher() {
+    function isAdmin() {
       return signedIn() && request.auth.token.email == "joseph.clark@doralacademynv.org";
+    }
+
+    function teacherPath() {
+      return /databases/(default)/documents/teachers/$(request.auth.token.email);
+    }
+
+    function isAssignedTeacherReport(fileName) {
+      return signedIn() &&
+        firestore.exists(teacherPath()) &&
+        fileName in firestore.get(teacherPath()).data.reportFiles;
     }
 
     function ownsRosterReport(fileName) {
@@ -41,7 +51,8 @@ service firebase.storage {
     }
 
     match /assignments/{assignmentId}/submissions/{fileName} {
-      allow read, write: if isTeacher() || ownsRosterReport(fileName);
+      allow read: if isAdmin() || isAssignedTeacherReport(fileName) || ownsRosterReport(fileName);
+      allow write: if isAdmin() || ownsRosterReport(fileName);
     }
 
     match /{allPaths=**} {
