@@ -54,6 +54,15 @@ const assignments = [
     answerPlaceholder: "value",
     generator: makeSystemProblem,
   },
+  {
+    id: "slope-two-points-v1",
+    title: "Slope from Two Points",
+    directions: "Find the slope between the two points",
+    problemCount: 30,
+    answerMode: "slope",
+    answerPlaceholder: "slope",
+    generator: makeSlopeProblem,
+  },
 ];
 const PROGRESS_SAVE_DELAY = 650;
 
@@ -564,10 +573,103 @@ function makeSystemProblem(random) {
   };
 }
 
+function greatestCommonDivisor(left, right) {
+  let a = Math.abs(left);
+  let b = Math.abs(right);
+  while (b !== 0) {
+    const next = a % b;
+    a = b;
+    b = next;
+  }
+  return a || 1;
+}
+
+function reduceFraction(numerator, denominator) {
+  if (denominator === 0) {
+    return { numerator: 1, denominator: 0, undefined: true };
+  }
+
+  if (numerator === 0) {
+    return { numerator: 0, denominator: 1, undefined: false };
+  }
+
+  const divisor = greatestCommonDivisor(numerator, denominator);
+  let reducedNumerator = numerator / divisor;
+  let reducedDenominator = denominator / divisor;
+
+  if (reducedDenominator < 0) {
+    reducedNumerator *= -1;
+    reducedDenominator *= -1;
+  }
+
+  return {
+    numerator: reducedNumerator,
+    denominator: reducedDenominator,
+    undefined: false,
+  };
+}
+
+function makeSlopeProblem(random, problemNumber = 1) {
+  const isPositive = problemNumber <= 10;
+  const isNegative = problemNumber > 10 && problemNumber <= 20;
+  const isZero = problemNumber > 20 && problemNumber <= 26;
+  const isVertical = problemNumber >= 27;
+  const x1 = integerBetween(random, -9, 9);
+  const y1 = integerBetween(random, -9, 9);
+  let x2 = x1;
+  let y2 = y1;
+
+  if (isVertical) {
+    while (y2 === y1) {
+      y2 = integerBetween(random, -9, 9);
+    }
+  } else if (isZero) {
+    while (x2 === x1) {
+      x2 = integerBetween(random, -9, 9);
+    }
+  } else {
+    while (x2 === x1) {
+      x2 = integerBetween(random, -9, 9);
+    }
+
+    const horizontalChange = x2 - x1;
+    const minMagnitude = problemNumber <= 6 ? 1 : 2;
+    const maxMagnitude = problemNumber <= 16 ? 7 : 12;
+    let verticalChange = nonZeroBetween(random, minMagnitude, maxMagnitude);
+    if (isNegative) {
+      verticalChange *= -1;
+    }
+    if (horizontalChange < 0) {
+      verticalChange *= -1;
+    }
+    y2 = y1 + verticalChange;
+  }
+
+  const run = x2 - x1;
+  const rise = y2 - y1;
+  const slope = reduceFraction(rise, run);
+
+  return {
+    type: isVertical
+      ? "Challenge: vertical line"
+      : isZero
+        ? "Zero slope"
+        : isNegative
+          ? "Negative slope"
+          : "Positive slope",
+    equation: `Find the slope between (${x1}, ${y1}) and (${x2}, ${y2}).`,
+    points: [
+      { x: x1, y: y1 },
+      { x: x2, y: y2 },
+    ],
+    answer: slope.undefined ? { kind: "undefined" } : { kind: "number", ...slope },
+  };
+}
+
 function makeProblem(student, problemNumber, attempt = 0, assignment = getSelectedAssignment()) {
   const seedText = `${assignment.id}:${student.id}:${student.name}:${problemNumber}:${attempt}`;
   const random = mulberry32(hashString(seedText));
-  const problem = assignment.generator(random);
+  const problem = assignment.generator(random, problemNumber);
   return {
     ...problem,
     answerMode: assignment.answerMode,
@@ -787,7 +889,7 @@ function renderProblems() {
             <div class="problem-type">${escapeHtml(problem.type)}</div>
             <div class="equation">${renderProblemPrompt(problem)}</div>
           </div>
-          <div class="answer-row ${problem.answerMode === "pair" ? "is-pair" : ""}">
+          <div class="answer-row ${getAnswerRowClass(problem)}">
             ${renderAnswerInputs(problem)}
             <span class="feedback" data-feedback="${problem.id}">Not answered</span>
           </div>
@@ -799,15 +901,22 @@ function renderProblems() {
   elements.problemList.querySelectorAll("[data-answer-input]").forEach((input) => {
     const savedAnswer = state.answers.get(input.dataset.answerInput);
     const answerKey = input.dataset.answerKey || "x";
-    input.value =
+    const savedValue =
       savedAnswer && typeof savedAnswer === "object"
         ? savedAnswer[answerKey] || ""
         : savedAnswer || "";
+    input.value = input.tagName === "SELECT" && !savedValue ? "number" : savedValue;
     input.disabled = state.isSubmitted;
-    input.addEventListener("input", handleAnswerInput);
+    input.addEventListener(input.tagName === "SELECT" ? "change" : "input", handleAnswerInput);
   });
 
   state.problems.forEach((problem) => updateProblemFeedback(problem.id));
+}
+
+function getAnswerRowClass(problem) {
+  if (problem.answerMode === "pair") return "is-pair";
+  if (problem.answerMode === "slope") return "is-slope";
+  return "";
 }
 
 function renderProblemPrompt(problem) {
@@ -843,6 +952,44 @@ function renderAnswerInputs(problem) {
           data-answer-input="${problem.id}"
           data-answer-key="y"
           placeholder="y"
+        />
+      </label>
+    `;
+  }
+
+  if (problem.answerMode === "slope") {
+    return `
+      <label class="answer-field slope-kind-field">
+        <span>Type</span>
+        <select
+          aria-label="Slope type for problem ${problem.number}"
+          data-answer-input="${problem.id}"
+          data-answer-key="kind"
+        >
+          <option value="number">Number</option>
+          <option value="undefined">Undefined</option>
+        </select>
+      </label>
+      <label class="answer-field">
+        <span>Num.</span>
+        <input
+          type="text"
+          inputmode="numeric"
+          aria-label="Slope numerator for problem ${problem.number}"
+          data-answer-input="${problem.id}"
+          data-answer-key="numerator"
+          placeholder="rise"
+        />
+      </label>
+      <label class="answer-field">
+        <span>Den.</span>
+        <input
+          type="text"
+          inputmode="numeric"
+          aria-label="Slope denominator for problem ${problem.number}"
+          data-answer-input="${problem.id}"
+          data-answer-key="denominator"
+          placeholder="run"
         />
       </label>
     `;
@@ -888,6 +1035,13 @@ function hasAnswerForProblem(problem, answers = state.answers) {
     return !isBlank(xValue) || !isBlank(yValue);
   }
 
+  if (problem.answerMode === "slope") {
+    const kind = answer && typeof answer === "object" ? answer.kind : "";
+    const numerator = answer && typeof answer === "object" ? answer.numerator : "";
+    const denominator = answer && typeof answer === "object" ? answer.denominator : "";
+    return kind === "undefined" || !isBlank(numerator) || !isBlank(denominator);
+  }
+
   const rawAnswer = answer && typeof answer === "object" ? answer.x : answer;
   return !isBlank(rawAnswer);
 }
@@ -913,6 +1067,42 @@ function getProblemResult(problem, answers = state.answers) {
     }
 
     return isCloseEnough(x, problem.answer.x) && isCloseEnough(y, problem.answer.y)
+      ? "correct"
+      : "wrong";
+  }
+
+  if (problem.answerMode === "slope") {
+    const kind = answer && typeof answer === "object" ? answer.kind || "number" : "number";
+    const numeratorValue = answer && typeof answer === "object" ? answer.numerator : "";
+    const denominatorValue = answer && typeof answer === "object" ? answer.denominator : "";
+
+    if (kind === "undefined") {
+      return problem.answer.kind === "undefined" ? "correct" : "wrong";
+    }
+
+    if (isBlank(numeratorValue) && isBlank(denominatorValue)) {
+      return "blank";
+    }
+
+    const numerator = Number(numeratorValue);
+    const denominator = Number(denominatorValue);
+    if (
+      isBlank(numeratorValue) ||
+      isBlank(denominatorValue) ||
+      !Number.isInteger(numerator) ||
+      !Number.isInteger(denominator) ||
+      denominator === 0
+    ) {
+      return "wrong";
+    }
+
+    if (problem.answer.kind === "undefined") {
+      return "wrong";
+    }
+
+    const reduced = reduceFraction(numerator, denominator);
+    return reduced.numerator === problem.answer.numerator &&
+      reduced.denominator === problem.answer.denominator
       ? "correct"
       : "wrong";
   }
@@ -990,6 +1180,52 @@ function answersObject() {
   return Object.fromEntries(state.answers.entries());
 }
 
+function localProgressKey(student = state.selectedStudent, assignment = getSelectedAssignment()) {
+  return `dragonmath:${assignment.id}:${student.id}:progress`;
+}
+
+function buildLocalProgressPayload(score, options = {}) {
+  const assignment = getSelectedAssignment();
+  const payload = {
+    assignmentId: assignment.id,
+    assignmentTitle: assignment.title,
+    studentId: state.selectedStudent.id,
+    studentName: state.selectedStudent.name,
+    studentEmail: state.selectedStudent.email,
+    answers: answersObject(),
+    answered: score.answered,
+    total: assignment.problemCount,
+    graded: Boolean(options.includeGrade),
+    submitted: Boolean(options.includeGrade),
+    updatedAtLocal: new Date().toISOString(),
+  };
+
+  if (options.includeGrade) {
+    payload.correct = score.correct;
+    payload.percent = score.percent;
+    payload.submittedAtLocal = new Date().toISOString();
+  }
+
+  return payload;
+}
+
+function saveLocalProgress(options = {}) {
+  if (!state.selectedStudent || !state.problems.length) return;
+
+  const score = calculateScore();
+  const payload = buildLocalProgressPayload(score, options);
+  localStorage.setItem(localProgressKey(), JSON.stringify(payload));
+}
+
+function readLocalProgress(student = state.selectedStudent) {
+  try {
+    const raw = localStorage.getItem(localProgressKey(student));
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 function buildProgressPayload(score, options = {}) {
   const assignment = getSelectedAssignment();
   const payload = {
@@ -1024,6 +1260,7 @@ function setSaveState(message) {
 function queueProgressSave() {
   if (!state.user || !state.problems.length) return;
 
+  saveLocalProgress();
   window.clearTimeout(state.saveTimer);
   setSaveState("Saving...");
   state.saveTimer = window.setTimeout(saveProgress, PROGRESS_SAVE_DELAY);
@@ -1035,6 +1272,7 @@ async function saveProgress() {
   state.isSaving = true;
   try {
     const score = calculateScore();
+    saveLocalProgress();
     await setDoc(progressRef(state.selectedStudent), buildProgressPayload(score), { merge: true });
     setSaveState(`Saved ${formatShortTime(new Date())}`);
   } catch (error) {
@@ -1089,6 +1327,8 @@ async function loadSelectedStudent() {
 }
 
 async function hydrateStudentWork(student) {
+  const localWork = readLocalProgress(student);
+
   try {
     const [progressSnapshot, submissionSnapshot] = await Promise.all([
       getDoc(progressRef(student)),
@@ -1099,18 +1339,18 @@ async function hydrateStudentWork(student) {
       ? submissionSnapshot.data()
       : progressSnapshot.exists()
         ? progressSnapshot.data()
-        : null;
+        : localWork;
 
     if (savedWork?.answers && typeof savedWork.answers === "object") {
       state.answers = new Map(Object.entries(savedWork.answers));
-      state.isSubmitted = submissionSnapshot.exists();
+      state.isSubmitted = submissionSnapshot.exists() || savedWork.graded === true || savedWork.submitted === true;
       renderProblems();
       updateStudentScore();
-      setSaveState(submissionSnapshot.exists() ? "Submitted" : "Restored");
+      setSaveState(state.isSubmitted ? "Submitted" : savedWork === localWork ? "Restored locally" : "Restored");
     }
 
-    if (submissionSnapshot.exists()) {
-      const submission = submissionSnapshot.data();
+    if (submissionSnapshot.exists() || savedWork?.graded === true || savedWork?.submitted === true) {
+      const submission = submissionSnapshot.exists() ? submissionSnapshot.data() : savedWork;
       state.isSubmitted = true;
       renderProblems();
       updateStudentScore();
@@ -1122,6 +1362,26 @@ async function hydrateStudentWork(student) {
       setText(elements.submissionNote, "");
     }
   } catch (error) {
+    if (localWork?.answers && typeof localWork.answers === "object") {
+      state.answers = new Map(Object.entries(localWork.answers));
+      state.isSubmitted = localWork.graded === true || localWork.submitted === true;
+      renderProblems();
+      updateStudentScore();
+      setSaveState(state.isSubmitted ? "Submitted locally" : "Restored locally");
+      setText(
+        elements.submissionNote,
+        state.isSubmitted
+          ? `Submitted locally: ${localWork.correct} out of ${localWork.total} (${localWork.percent}%).`
+          : "",
+      );
+      setBanner(
+        elements.studentCloudNote,
+        `${readableFirebaseError(error)} Your work was restored from this device.`,
+        "warning",
+      );
+      return;
+    }
+
     setBanner(elements.studentCloudNote, readableFirebaseError(error), "danger");
     setSaveState("Cloud unavailable");
   }
@@ -1182,9 +1442,11 @@ async function submitAssignment() {
   const score = calculateScore();
   const report = buildSubmissionReport(score);
   let reportInfo = {};
+  saveLocalProgress({ includeGrade: true });
 
   try {
     await saveProgress();
+    saveLocalProgress({ includeGrade: true });
     reportInfo = await uploadSubmissionReport(report);
   } catch (error) {
     reportInfo = {
@@ -1225,8 +1487,23 @@ async function submitAssignment() {
       `Submitted: ${score.correct} out of ${assignment.problemCount} (${score.percent}%).`,
     );
   } catch (error) {
-    setSaveState("Submit blocked");
-    setBanner(elements.studentCloudNote, readableFirebaseError(error), "danger");
+    const assignment = getSelectedAssignment();
+    state.isSubmitted = true;
+    saveLocalProgress({ includeGrade: true });
+    renderProblems();
+    updateStudentScore();
+    setSaveState("Submitted locally");
+    setText(elements.submitAssignment, "Submitted");
+    setDisabled(elements.submitAssignment, true);
+    setBanner(
+      elements.studentCloudNote,
+      `${readableFirebaseError(error)} Grade is saved on this device until Firebase rules are deployed.`,
+      "warning",
+    );
+    setText(
+      elements.submissionNote,
+      `Submitted locally: ${score.correct} out of ${assignment.problemCount} (${score.percent}%).`,
+    );
   } finally {
     setDisabled(elements.submitAssignment, state.isSubmitted);
   }
@@ -1306,6 +1583,17 @@ function answersMapFromWork(work) {
 
 function formatAnswerValue(value) {
   if (value && typeof value === "object") {
+    if (value.kind === "undefined") {
+      return "Undefined";
+    }
+
+    if ("numerator" in value || "denominator" in value) {
+      const numerator = value.numerator === undefined || value.numerator === "" ? "?" : value.numerator;
+      const denominator =
+        value.denominator === undefined || value.denominator === "" ? "?" : value.denominator;
+      return `${numerator}/${denominator}`;
+    }
+
     const parts = ["x", "y"]
       .map((key) => (value[key] === undefined || value[key] === "" ? "" : `${key} = ${value[key]}`))
       .filter(Boolean);

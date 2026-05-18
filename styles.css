@@ -445,12 +445,21 @@ a:focus-visible {
   align-items: center;
 }
 
-.answer-row input {
+.answer-row input,
+.answer-row select {
   min-width: 0;
 }
 
 .answer-row.is-pair {
   grid-template-columns: minmax(78px, 1fr) minmax(78px, 1fr) minmax(110px, auto);
+}
+
+.answer-row.is-slope {
+  grid-template-columns:
+    minmax(112px, 0.9fr)
+    minmax(92px, 0.75fr)
+    minmax(92px, 0.75fr)
+    minmax(110px, auto);
 }
 
 .answer-field {
@@ -1006,6 +1015,10 @@ tbody tr.is-selected-work {
   }
 
   .answer-row.is-pair {
+    grid-template-columns: 1fr;
+  }
+
+  .answer-row.is-slope {
     grid-template-columns: 1fr;
   }
 
