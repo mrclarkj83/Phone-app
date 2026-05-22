@@ -161,37 +161,40 @@ const state = {
   submissions: loadSubmissions(),
 };
 
-const elements = {
-  assignmentSelect: document.querySelector("#assignment-select"),
-  dashboardAssignmentSelect: document.querySelector("#dashboard-assignment-select"),
-  studentId: document.querySelector("#student-id"),
-  accessNote: document.querySelector("#student-access-note"),
-  loadAssignment: document.querySelector("#load-assignment"),
-  submitAssignment: document.querySelector("#submit-assignment"),
-  problemList: document.querySelector("#problem-list"),
-  assignmentDirections: document.querySelector("#assignment-directions"),
-  assignmentTitle: document.querySelector("#assignment-title"),
-  currentScore: document.querySelector("#current-score"),
-  currentPercent: document.querySelector("#current-percent"),
-  answeredCount: document.querySelector("#answered-count"),
-  correctCount: document.querySelector("#correct-count"),
-  submissionNote: document.querySelector("#submission-note"),
-  dashboardBody: document.querySelector("#dashboard-body"),
-  submittedCount: document.querySelector("#submitted-count"),
-  classAverage: document.querySelector("#class-average"),
-  highestScore: document.querySelector("#highest-score"),
-  dashboardSyncStatus: document.querySelector("#dashboard-sync-status"),
-  refreshDashboard: document.querySelector("#refresh-dashboard"),
-  resetDashboard: document.querySelector("#reset-dashboard"),
-  headerProblemCount: document.querySelector("#header-problem-count"),
-  headerStudentCount: document.querySelector("#header-student-count"),
-};
+let elements = {};
+let dashboardRefreshTimer = null;
+
+function collectElements() {
+  elements = {
+    assignmentSelect: document.querySelector("#assignment-select"),
+    dashboardAssignmentSelect: document.querySelector("#dashboard-assignment-select"),
+    studentId: document.querySelector("#student-id"),
+    accessNote: document.querySelector("#student-access-note"),
+    loadAssignment: document.querySelector("#load-assignment"),
+    submitAssignment: document.querySelector("#submit-assignment"),
+    problemList: document.querySelector("#problem-list"),
+    assignmentDirections: document.querySelector("#assignment-directions"),
+    assignmentTitle: document.querySelector("#assignment-title"),
+    currentScore: document.querySelector("#current-score"),
+    currentPercent: document.querySelector("#current-percent"),
+    answeredCount: document.querySelector("#answered-count"),
+    correctCount: document.querySelector("#correct-count"),
+    submissionNote: document.querySelector("#submission-note"),
+    dashboardBody: document.querySelector("#dashboard-body"),
+    submittedCount: document.querySelector("#submitted-count"),
+    classAverage: document.querySelector("#class-average"),
+    highestScore: document.querySelector("#highest-score"),
+    dashboardSyncStatus: document.querySelector("#dashboard-sync-status"),
+    refreshDashboard: document.querySelector("#refresh-dashboard"),
+    resetDashboard: document.querySelector("#reset-dashboard"),
+    headerProblemCount: document.querySelector("#header-problem-count"),
+    headerStudentCount: document.querySelector("#header-student-count"),
+  };
+}
 
 function compareStudentsByLastName(a, b) {
-  const aParts = a.name.split(" ");
-  const bParts = b.name.split(" ");
-  const aLast = aParts[aParts.length - 1];
-  const bLast = bParts[bParts.length - 1];
+  const [aLast] = a.key.split("-");
+  const [bLast] = b.key.split("-");
   return aLast.localeCompare(bLast) || a.name.localeCompare(b.name);
 }
 
@@ -1076,7 +1079,7 @@ function bindEvents() {
       }
     });
 
-    window.setInterval(refreshDashboard, DASHBOARD_REFRESH_INTERVAL_MS);
+    dashboardRefreshTimer = window.setInterval(refreshDashboard, DASHBOARD_REFRESH_INTERVAL_MS);
   }
 }
 
@@ -1090,4 +1093,25 @@ function init() {
   bindEvents();
 }
 
-init();
+export function mountAssignmentDashboard() {
+  if (dashboardRefreshTimer) {
+    window.clearInterval(dashboardRefreshTimer);
+    dashboardRefreshTimer = null;
+  }
+
+  collectElements();
+  state.selectedAssignment = assignments[0];
+  state.selectedStudent = null;
+  state.lockedSubmission = null;
+  state.problems = [];
+  state.answers = new Map();
+  state.submissions = loadSubmissions();
+  init();
+
+  return () => {
+    if (dashboardRefreshTimer) {
+      window.clearInterval(dashboardRefreshTimer);
+      dashboardRefreshTimer = null;
+    }
+  };
+}
