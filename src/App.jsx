@@ -1,42 +1,40 @@
-import { Navigate, Route, Routes } from "react-router-dom";
-import ProtectedRoute from "./routes/ProtectedRoute";
-import RoleHomeRedirect from "./routes/RoleHomeRedirect";
+import { Route, Routes } from "react-router-dom";
+import EntryGate from "./routes/EntryGate";
 import AdminDashboard from "./pages/AdminDashboard";
-import LoginPage from "./pages/LoginPage";
 import StudentDashboard from "./pages/StudentDashboard";
 import TeacherDashboard from "./pages/TeacherDashboard";
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/" element={<RoleHomeRedirect />} />
-      <Route path="/dashboard" element={<RoleHomeRedirect />} />
+      <Route path="/login" element={<EntryGate />} />
+      <Route path="/" element={<EntryGate />} />
+      <Route path="/dashboard" element={<EntryGate />} />
       <Route
         path="/student"
         element={
-          <ProtectedRoute allowedRoles={["student"]}>
+          <EntryGate allowedRole="student">
             <StudentDashboard />
-          </ProtectedRoute>
+          </EntryGate>
         }
       />
       <Route
         path="/teacher"
         element={
-          <ProtectedRoute allowedRoles={["teacher"]}>
+          <EntryGate allowedRole="teacher">
             <TeacherDashboard />
-          </ProtectedRoute>
+          </EntryGate>
         }
       />
       <Route
         path="/admin"
         element={
-          <ProtectedRoute allowedRoles={["admin"]}>
+          <EntryGate allowedRole="admin">
             <AdminDashboard />
-          </ProtectedRoute>
+          </EntryGate>
         }
       />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<EntryGate />} />
     </Routes>
   );
 }

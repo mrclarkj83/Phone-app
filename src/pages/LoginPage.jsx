@@ -1,27 +1,14 @@
-import { Navigate } from "react-router-dom";
 import { ACCESS_DENIED_MESSAGE, useAuth } from "../auth/AuthProvider";
-import LoadingScreen from "./LoadingScreen";
-import { roleHome } from "../routes/routeUtils";
 
 export default function LoginPage() {
   const {
-    account,
     configured,
     message,
     missingFirebaseConfig,
     signInLoading,
     signInWithGoogle,
     signOutCurrentUser,
-    status,
   } = useAuth();
-
-  if (status === "checking") {
-    return <LoadingScreen label="Checking sign-in" />;
-  }
-
-  if (status === "assigned" && account) {
-    return <Navigate to={roleHome(account.role)} replace />;
-  }
 
   const denied = message === ACCESS_DENIED_MESSAGE;
 
