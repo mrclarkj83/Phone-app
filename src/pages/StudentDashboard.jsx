@@ -1,8 +1,10 @@
 import PrivateHeader from "../components/PrivateHeader";
 import useAssignmentDashboard from "../hooks/useAssignmentDashboard";
+import { useAuth } from "../auth/AuthProvider";
 
 export default function StudentDashboard() {
-  useAssignmentDashboard();
+  const { account } = useAuth();
+  useAssignmentDashboard({ account });
 
   return (
     <>

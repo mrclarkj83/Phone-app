@@ -1,3 +1,12 @@
+import {
+  collection,
+  doc,
+  onSnapshot,
+  serverTimestamp,
+  setDoc,
+} from "firebase/firestore";
+import { db, firebaseConfigured } from "./src/lib/firebase";
+
 const LINEAR_ASSIGNMENT_ID = "linear-equations-doral-v1";
 const STORAGE_KEY = "freshman-algebra-linear-dashboard-doral-v3";
 const LEGACY_STORAGE_KEYS = [
@@ -14,7 +23,7 @@ const assignments = [
     title: "Linear Equations",
     directions: "Solve for x",
     problemCount: 30,
-    answerType: "single",
+    answerMode: "single",
     answerPlaceholder: "x =",
     generator: makeLinearProblem,
   },
@@ -23,9 +32,104 @@ const assignments = [
     title: "Systems of Equations",
     directions: "Solve for x and y",
     problemCount: 15,
-    answerType: "ordered-pair",
+    answerMode: "pair",
     answerPlaceholder: "value",
     generator: makeSystemProblem,
+  },
+  {
+    id: "slope-two-points-v1",
+    title: "Slope from Two Points",
+    directions: "Find the slope between the two points",
+    problemCount: 30,
+    answerMode: "slope",
+    answerPlaceholder: "slope",
+    generator: makeSlopeProblem,
+  },
+  {
+    id: "slope-intercept-form-v1",
+    title: "Slope-Intercept Form",
+    directions: "Identify the slope m and y-intercept b",
+    problemCount: 30,
+    answerMode: "slopeIntercept",
+    answerPlaceholder: "value",
+    generator: makeSlopeInterceptProblem,
+  },
+  {
+    id: "linear-inequalities-html-v1",
+    title: "Linear Inequalities",
+    directions: "Solve each inequality for x",
+    problemCount: 30,
+    answerMode: "inequality",
+    answerPlaceholder: "boundary",
+    generator: makeLinearInequalityProblem,
+  },
+  {
+    id: "coordinate-grid-lines-v1",
+    title: "Coordinate Grid Lines",
+    directions: "Use the graph to answer each question",
+    problemCount: 30,
+    answerMode: "graphLine",
+    answerPlaceholder: "value",
+    generator: makeCoordinateGridLineProblem,
+  },
+];
+
+const CUSTOM_ASSIGNMENT_TYPES = [
+  {
+    id: "linear-equations",
+    label: "Linear Equations",
+    generator: makeLinearProblem,
+    answerMode: "single",
+    directions: "Solve for x",
+  },
+  {
+    id: "systems-equations",
+    label: "Systems of Equations",
+    generator: makeSystemProblem,
+    answerMode: "pair",
+    directions: "Solve for x and y",
+  },
+  {
+    id: "slope-two-points",
+    label: "Slope from Two Points",
+    generator: makeSlopeProblem,
+    answerMode: "slope",
+    directions: "Find the slope between the two points",
+  },
+  {
+    id: "graphing-linear-equations",
+    label: "Graphing Linear Equations",
+    generator: makeCoordinateGridLineProblem,
+    answerMode: "graphLine",
+    directions: "Use the graph to answer each question",
+  },
+  {
+    id: "writing-equations-from-graphs",
+    label: "Writing Equations from Graphs",
+    generator: makeCoordinateGridLineProblem,
+    answerMode: "graphLine",
+    directions: "Write equations from graphs",
+  },
+  {
+    id: "multi-step-equations",
+    label: "Solving Multi-Step Equations",
+    generator: makeLinearProblem,
+    answerMode: "single",
+    directions: "Solve each multi-step equation",
+  },
+  {
+    id: "inequalities",
+    label: "Inequalities",
+    generator: makeLinearInequalityProblem,
+    answerMode: "inequality",
+    directions: "Solve each inequality for x",
+  },
+  {
+    id: "coordinate-grid-problems",
+    label: "Coordinate Grid Problems",
+    generator: makeCoordinateGridLineProblem,
+    answerMode: "graphLine",
+    directions: "Use the coordinate grid to answer",
   },
 ];
 
@@ -160,6 +264,9 @@ const state = {
   answers: new Map(),
   submissions: loadSubmissions(),
   visibleStudentKeys: null,
+  customAssignments: [],
+  account: null,
+  assignmentUnsubscribe: null,
 };
 
 let elements = {};
@@ -190,6 +297,21 @@ function collectElements() {
     resetDashboard: document.querySelector("#reset-dashboard"),
     headerProblemCount: document.querySelector("#header-problem-count"),
     headerStudentCount: document.querySelector("#header-student-count"),
+    teacherNote: document.querySelector("#teacher-note"),
+    customAssignmentTitle: document.querySelector("#custom-assignment-title"),
+    customAssignmentType: document.querySelector("#custom-assignment-type"),
+    customProblemCount: document.querySelector("#custom-problem-count"),
+    customProblemCountOther: document.querySelector("#custom-problem-count-other"),
+    customDifficulty: document.querySelector("#custom-difficulty"),
+    customDueDate: document.querySelector("#custom-due-date"),
+    customClassPeriod: document.querySelector("#custom-class-period"),
+    customFeedbackMode: document.querySelector("#custom-feedback-mode"),
+    customAllowRetries: document.querySelector("#custom-allow-retries"),
+    customMaxAttempts: document.querySelector("#custom-max-attempts"),
+    customTimeEnabled: document.querySelector("#custom-time-enabled"),
+    customTimeLimit: document.querySelector("#custom-time-limit"),
+    saveAssignmentButton: document.querySelector("#save-assignment"),
+    customAssignmentList: document.querySelector("#custom-assignment-list"),
   };
 }
 
@@ -203,6 +325,18 @@ function setText(element, value) {
   if (element) {
     element.textContent = value;
   }
+}
+
+function setDisabled(element, disabled) {
+  if (element) {
+    element.disabled = disabled;
+  }
+}
+
+function setBanner(element, message, tone = "neutral") {
+  if (!element) return;
+  element.textContent = message;
+  element.dataset.tone = tone;
 }
 
 function escapeHtml(value) {
@@ -249,8 +383,12 @@ function getSelectedAssignment() {
   return state.selectedAssignment || assignments[0];
 }
 
+function getAllAssignments() {
+  return [...assignments, ...state.customAssignments];
+}
+
 function getAssignmentById(assignmentId) {
-  return assignments.find((assignment) => assignment.id === assignmentId) || assignments[0];
+  return getAllAssignments().find((assignment) => assignment.id === assignmentId) || assignments[0];
 }
 
 function renderHeaderCounts() {
@@ -432,13 +570,399 @@ function makeSystemProblem(random) {
   };
 }
 
+function greatestCommonDivisor(left, right) {
+  let a = Math.abs(left);
+  let b = Math.abs(right);
+  while (b !== 0) {
+    const next = a % b;
+    a = b;
+    b = next;
+  }
+  return a || 1;
+}
+
+function reduceFraction(numerator, denominator) {
+  if (denominator === 0) {
+    return { numerator: 1, denominator: 0, undefined: true };
+  }
+
+  if (numerator === 0) {
+    return { numerator: 0, denominator: 1, undefined: false };
+  }
+
+  const divisor = greatestCommonDivisor(numerator, denominator);
+  let reducedNumerator = numerator / divisor;
+  let reducedDenominator = denominator / divisor;
+
+  if (reducedDenominator < 0) {
+    reducedNumerator *= -1;
+    reducedDenominator *= -1;
+  }
+
+  return {
+    numerator: reducedNumerator,
+    denominator: reducedDenominator,
+    undefined: false,
+  };
+}
+
+function formatFractionValue(fraction) {
+  if (!fraction || fraction.undefined) return "undefined";
+  if (fraction.denominator === 1) return `${fraction.numerator}`;
+  return `${fraction.numerator}/${fraction.denominator}`;
+}
+
+function formatSlopeCoefficient(coefficient) {
+  const fraction = reduceFraction(coefficient.numerator, coefficient.denominator);
+  if (fraction.numerator === 1 && fraction.denominator === 1) return "x";
+  if (fraction.numerator === -1 && fraction.denominator === 1) return "-x";
+  return `${formatFractionValue(fraction)}x`;
+}
+
+function formatSlopeInterceptEquation(slope, intercept) {
+  const slopeText = formatSlopeCoefficient(slope);
+  if (intercept.numerator === 0) return `y = ${slopeText}`;
+  const sign = intercept.numerator > 0 ? "+" : "-";
+  return `y = ${slopeText} ${sign} ${formatFractionValue({
+    numerator: Math.abs(intercept.numerator),
+    denominator: intercept.denominator,
+  })}`;
+}
+
+function fractionToNumber(fraction) {
+  if (!fraction || fraction.undefined) return NaN;
+  return fraction.numerator / fraction.denominator;
+}
+
+function parseFractionInput(value) {
+  const rawValue = `${value ?? ""}`.trim();
+  if (!rawValue) return null;
+
+  const fractionMatch = rawValue.match(/^([+-]?\d+)\s*(?:\/\s*([+-]?\d+))?$/);
+  if (fractionMatch) {
+    const numerator = Number(fractionMatch[1]);
+    const denominator = fractionMatch[2] === undefined ? 1 : Number(fractionMatch[2]);
+    if (!Number.isInteger(numerator) || !Number.isInteger(denominator) || denominator === 0) {
+      return null;
+    }
+    return reduceFraction(numerator, denominator);
+  }
+
+  const decimal = Number(rawValue);
+  if (!Number.isFinite(decimal)) return null;
+
+  const decimalPlaces = rawValue.includes(".") ? rawValue.split(".").at(-1).length : 0;
+  const denominator = 10 ** decimalPlaces;
+  return reduceFraction(Math.round(decimal * denominator), denominator);
+}
+
+function fractionsEqual(left, right) {
+  if (!left || !right || left.undefined || right.undefined) return false;
+  const reducedLeft = reduceFraction(left.numerator, left.denominator);
+  const reducedRight = reduceFraction(right.numerator, right.denominator);
+  return (
+    reducedLeft.numerator === reducedRight.numerator &&
+    reducedLeft.denominator === reducedRight.denominator
+  );
+}
+
+function flipInequalitySymbol(symbol) {
+  return {
+    "<": ">",
+    ">": "<",
+    "<=": ">=",
+    ">=": "<=",
+  }[symbol];
+}
+
+function makeInequalityAnswer(coefficient, symbol, rightValue) {
+  const boundary = rightValue / coefficient;
+  return {
+    boundary,
+    symbol: coefficient < 0 ? flipInequalitySymbol(symbol) : symbol,
+  };
+}
+
+function makeLinearInequalityProblem(random, problemNumber = 1) {
+  const noSignFlip = problemNumber <= 20;
+  const negativeCoefficient = problemNumber > 20 && problemNumber <= 26;
+  const variablesBothSides = problemNumber >= 27;
+  const boundary = integerBetween(random, -12, 12);
+  const symbolOptions = ["<", ">", "<=", ">="];
+  const baseSymbol = symbolOptions[integerBetween(random, 0, symbolOptions.length - 1)];
+  let equation = "";
+  let answer = { boundary, symbol: baseSymbol };
+  let type = "Positive coefficient";
+
+  if (noSignFlip) {
+    const coefficient = nonZeroBetween(random, 2, 9);
+    const constant =
+      problemNumber <= 10 ? integerBetween(random, 1, 18) : integerBetween(random, -18, -1);
+    const rightValue = coefficient * boundary + constant;
+    equation = `${formatLinear(coefficient, constant)} ${baseSymbol} ${rightValue}`;
+    answer = makeInequalityAnswer(coefficient, baseSymbol, rightValue - constant);
+    type = problemNumber <= 10 ? "Positive coefficient" : "Negative constant";
+  } else if (negativeCoefficient) {
+    const coefficient = -integerBetween(random, 2, 9);
+    const constant = integerBetween(random, -12, 12);
+    const rightValue = coefficient * boundary + constant;
+    equation = `${formatLinear(coefficient, constant)} ${baseSymbol} ${rightValue}`;
+    answer = makeInequalityAnswer(coefficient, baseSymbol, rightValue - constant);
+    type = "Negative coefficient";
+  } else if (variablesBothSides) {
+    let leftCoefficient = nonZeroBetween(random, -8, 8);
+    let rightCoefficient = nonZeroBetween(random, -8, 8);
+    while (leftCoefficient === rightCoefficient) {
+      rightCoefficient = nonZeroBetween(random, -8, 8);
+    }
+
+    const coefficientDifference = leftCoefficient - rightCoefficient;
+    const leftConstant = integerBetween(random, -12, 12);
+    const rightConstant = coefficientDifference * boundary + leftConstant;
+    equation = `${formatLinear(leftCoefficient, leftConstant)} ${baseSymbol} ${formatLinear(
+      rightCoefficient,
+      rightConstant,
+    )}`;
+    answer = makeInequalityAnswer(coefficientDifference, baseSymbol, rightConstant - leftConstant);
+    type = "Variables on both sides";
+  }
+
+  return {
+    type,
+    equation,
+    answer,
+  };
+}
+
+function makeSlopeProblem(random, problemNumber = 1) {
+  const isPositive = problemNumber <= 10;
+  const isNegative = problemNumber > 10 && problemNumber <= 20;
+  const isZero = problemNumber > 20 && problemNumber <= 26;
+  const isVertical = problemNumber >= 27;
+  const x1 = integerBetween(random, -9, 9);
+  const y1 = integerBetween(random, -9, 9);
+  let x2 = x1;
+  let y2 = y1;
+
+  if (isVertical) {
+    while (y2 === y1) {
+      y2 = integerBetween(random, -9, 9);
+    }
+  } else if (isZero) {
+    while (x2 === x1) {
+      x2 = integerBetween(random, -9, 9);
+    }
+  } else {
+    while (x2 === x1) {
+      x2 = integerBetween(random, -9, 9);
+    }
+
+    const horizontalChange = x2 - x1;
+    const minMagnitude = problemNumber <= 6 ? 1 : 2;
+    const maxMagnitude = problemNumber <= 16 ? 7 : 12;
+    let verticalChange = nonZeroBetween(random, minMagnitude, maxMagnitude);
+    if (isNegative) {
+      verticalChange *= -1;
+    }
+    if (horizontalChange < 0) {
+      verticalChange *= -1;
+    }
+    y2 = y1 + verticalChange;
+  }
+
+  const run = x2 - x1;
+  const rise = y2 - y1;
+  const slope = reduceFraction(rise, run);
+
+  return {
+    type: isVertical
+      ? "Challenge: vertical line"
+      : isZero
+        ? "Zero slope"
+        : isNegative
+          ? "Negative slope"
+          : "Positive slope",
+    equation: `Find the slope between (${x1}, ${y1}) and (${x2}, ${y2}).`,
+    points: [
+      { x: x1, y: y1 },
+      { x: x2, y: y2 },
+    ],
+    answer: slope.undefined ? { kind: "undefined" } : { kind: "number", ...slope },
+  };
+}
+
+function makeSlopeInterceptProblem(random, problemNumber = 1) {
+  const inSlopeInterceptForm = problemNumber <= 20;
+  const scaledYForm = problemNumber > 20 && problemNumber <= 26;
+  const standardForm = problemNumber >= 27;
+  let equation = "";
+  let slope = reduceFraction(nonZeroBetween(random, 1, 6), 1);
+  let intercept = reduceFraction(integerBetween(random, 1, 9), 1);
+  let type = "Slope-intercept form";
+
+  if (inSlopeInterceptForm) {
+    if (problemNumber > 10) {
+      const makeNegativeSlope = problemNumber % 2 === 1;
+      slope = reduceFraction(
+        makeNegativeSlope ? -nonZeroBetween(random, 1, 7) : nonZeroBetween(random, 1, 7),
+        1,
+      );
+      intercept = reduceFraction(
+        makeNegativeSlope ? integerBetween(random, -9, 9) : -nonZeroBetween(random, 1, 9),
+        1,
+      );
+    }
+
+    equation = formatSlopeInterceptEquation(slope, intercept);
+    type = problemNumber > 10 ? "Negative slope or intercept" : "Slope-intercept form";
+  } else if (scaledYForm) {
+    const yCoefficient = integerBetween(random, 2, 6);
+    const xCoefficient = nonZeroBetween(random, -12, 12);
+    const constant = integerBetween(random, -18, 18);
+    slope = reduceFraction(xCoefficient, yCoefficient);
+    intercept = reduceFraction(constant, yCoefficient);
+    equation = `${yCoefficient}y = ${formatLinear(xCoefficient, constant)}`;
+    type = "Solve for y";
+  } else if (standardForm) {
+    const xCoefficient = nonZeroBetween(random, -8, 8);
+    const yCoefficient = nonZeroBetween(random, 2, 8);
+    const constant = integerBetween(random, -24, 24);
+    slope = reduceFraction(-xCoefficient, yCoefficient);
+    intercept = reduceFraction(constant, yCoefficient);
+    equation = `${formatLinear(xCoefficient, 0)} ${yCoefficient > 0 ? "+" : "-"} ${Math.abs(
+      yCoefficient,
+    )}y = ${constant}`;
+    type = "Standard form";
+  }
+
+  return {
+    type,
+    equation,
+    answer: {
+      m: slope,
+      b: intercept,
+    },
+  };
+}
+
+function makeCoordinateGridLineProblem(random, problemNumber = 1) {
+  const slopeRanges =
+    problemNumber <= 10
+      ? [
+          [1, 1],
+          [2, 1],
+          [3, 1],
+        ]
+      : problemNumber <= 18
+        ? [
+            [-3, 1],
+            [-2, 1],
+            [-1, 1],
+            [1, 1],
+            [2, 1],
+            [3, 1],
+          ]
+        : [
+            [-3, 2],
+            [-2, 3],
+            [-1, 2],
+            [1, 2],
+            [2, 3],
+            [3, 2],
+          ];
+  const [slopeNumerator, slopeDenominator] =
+    slopeRanges[integerBetween(random, 0, slopeRanges.length - 1)];
+  const slope = reduceFraction(slopeNumerator, slopeDenominator);
+  let intercept = reduceFraction(integerBetween(random, -6, 6), 1);
+  let x1 = 0;
+  let x2 = 0;
+  let y1 = 0;
+  let y2 = 0;
+  let attempts = 0;
+
+  while (
+    (x1 === x2 ||
+      Math.abs(x1) > 10 ||
+      Math.abs(x2) > 10 ||
+      !Number.isInteger(y1) ||
+      !Number.isInteger(y2) ||
+      Math.abs(y1) > 10 ||
+      Math.abs(y2) > 10) &&
+    attempts < 80
+  ) {
+    x1 = slope.denominator * integerBetween(random, -4, 4);
+    x2 = slope.denominator * integerBetween(random, -4, 4);
+    intercept = reduceFraction(integerBetween(random, -6, 6), 1);
+    y1 = fractionToNumber(slope) * x1 + fractionToNumber(intercept);
+    y2 = fractionToNumber(slope) * x2 + fractionToNumber(intercept);
+    attempts += 1;
+  }
+
+  const questionKind =
+    problemNumber <= 10
+      ? "slope"
+      : problemNumber <= 18
+        ? "intercept"
+        : problemNumber <= 24
+          ? "point"
+          : "equation";
+  const pointMultiplier = x1 === 0 ? 1 : x1 / slope.denominator;
+  const pointX = x1 === 0 ? x2 : x1 + slope.denominator * (pointMultiplier > 0 ? -1 : 1);
+  const pointY = fractionToNumber(slope) * pointX + fractionToNumber(intercept);
+  const safePoint =
+    Number.isInteger(pointY) && Math.abs(pointX) <= 10 && Math.abs(pointY) <= 10
+      ? { x: pointX, y: pointY }
+      : { x: x2, y: y2 };
+  const prompts = {
+    slope: "Find the slope of the line shown on the graph.",
+    intercept: "Find the y-intercept of the line shown on the graph.",
+    point: "Enter one point on the line shown on the graph.",
+    equation: "Write the equation of the line in y = mx + b form.",
+  };
+  const typeLabels = {
+    slope: problemNumber <= 5 ? "Positive slope from graph" : "Slope from graph",
+    intercept: "Y-intercept from graph",
+    point: "Point on a graphed line",
+    equation: "Equation from graph",
+  };
+
+  return {
+    type: typeLabels[questionKind],
+    equation: prompts[questionKind],
+    graphQuestion: questionKind,
+    graph: {
+      slope,
+      intercept,
+      points: [
+        { x: x1, y: y1 },
+        { x: x2, y: y2 },
+      ],
+    },
+    table: {
+      headers: ["Point", "x", "y"],
+      rows: [
+        ["A", x1, y1],
+        ["B", x2, y2],
+      ],
+    },
+    answer:
+      questionKind === "slope"
+        ? { slope }
+        : questionKind === "intercept"
+          ? { b: intercept }
+          : questionKind === "point"
+            ? { point: safePoint }
+            : { m: slope, b: intercept },
+  };
+}
+
 function makeProblem(assignment, student, problemNumber, attempt = 0) {
   const seedText = `${assignment.id}:${student.key}:${student.name}:${problemNumber}:${attempt}`;
   const random = mulberry32(hashString(seedText));
-  const problem = assignment.generator(random);
+  const problem = assignment.generator(random, problemNumber);
   return {
     ...problem,
-    answerType: assignment.answerType,
+    answerMode: assignment.answerMode || assignment.answerType || "single",
     id: `${assignment.id}-${student.key}-${problemNumber}`,
     number: problemNumber,
   };
@@ -493,9 +1017,9 @@ function normalizeSubmissions(saved) {
     return normalized;
   }
 
-  assignments.forEach((assignment) => {
-    if (saved[assignment.id] && typeof saved[assignment.id] === "object") {
-      normalized[assignment.id] = saved[assignment.id];
+  Object.entries(saved).forEach(([assignmentId, submissions]) => {
+    if (submissions && typeof submissions === "object") {
+      normalized[assignmentId] = submissions;
     }
   });
 
@@ -507,14 +1031,17 @@ function mergeSubmissions(...stores) {
 
   stores.forEach((store) => {
     const normalized = normalizeSubmissions(store);
-    assignments.forEach((assignment) => {
-      Object.entries(normalized[assignment.id] || {}).forEach(([studentKey, submission]) => {
-        const existing = merged[assignment.id][studentKey];
+    Object.entries(normalized).forEach(([assignmentId, submissions]) => {
+      if (!merged[assignmentId]) {
+        merged[assignmentId] = {};
+      }
+      Object.entries(submissions || {}).forEach(([studentKey, submission]) => {
+        const existing = merged[assignmentId][studentKey];
         if (
           !existing ||
           new Date(submission.submittedAt || 0) >= new Date(existing.submittedAt || 0)
         ) {
-          merged[assignment.id][studentKey] = submission;
+          merged[assignmentId][studentKey] = submission;
         }
       });
     });
@@ -570,7 +1097,7 @@ function isAssignmentLocked() {
 }
 
 function renderAssignmentOptions() {
-  const options = assignments
+  const options = getAllAssignments()
     .map(
       (assignment) =>
         `<option value="${assignment.id}">${assignment.title} (${assignment.problemCount})</option>`,
@@ -585,6 +1112,196 @@ function renderAssignmentOptions() {
   if (elements.dashboardAssignmentSelect) {
     elements.dashboardAssignmentSelect.innerHTML = options;
     elements.dashboardAssignmentSelect.value = getSelectedAssignment().id;
+  }
+}
+
+function getAssignmentTypeConfig(typeId) {
+  return CUSTOM_ASSIGNMENT_TYPES.find((type) => type.id === typeId) || CUSTOM_ASSIGNMENT_TYPES[0];
+}
+
+function normalizeProblemCount(value) {
+  const count = Number(value);
+  if (!Number.isInteger(count) || count < 1) return 10;
+  return Math.min(count, 60);
+}
+
+function normalizeCustomAssignment(data = {}, fallbackId = "") {
+  const typeConfig = getAssignmentTypeConfig(data.assignmentType);
+  const problemCount = normalizeProblemCount(data.problemCount);
+  return {
+    id: data.assignmentId || fallbackId,
+    title: data.title || typeConfig.label,
+    directions: data.directions || typeConfig.directions,
+    problemCount,
+    answerMode: data.answerMode || typeConfig.answerMode,
+    answerPlaceholder: data.answerPlaceholder || "value",
+    generator: typeConfig.generator,
+    isTeacherCreated: true,
+    assignmentType: typeConfig.id,
+    assignmentTypeLabel: typeConfig.label,
+    difficulty: data.difficulty || "mixed",
+    dueDate: data.dueDate || "",
+    classPeriod: data.classPeriod || "",
+    showImmediateFeedback: data.showImmediateFeedback === true,
+    allowRetries: data.allowRetries === true,
+    maxAttempts: normalizeProblemCount(data.maxAttempts || 1),
+    timeLimitMinutes: Number(data.timeLimitMinutes || 0),
+    teacherUid: data.teacherUid || "",
+    active: data.active !== false,
+    createdAt: data.createdAt || null,
+    updatedAt: data.updatedAt || null,
+  };
+}
+
+function shouldShowCustomAssignment(assignment) {
+  if (!assignment.active) return false;
+  if (!elements.customAssignmentList) return true;
+  if (state.account?.role === "admin") return true;
+  return !assignment.teacherUid || assignment.teacherUid === state.account?.uid;
+}
+
+function subscribeCustomAssignments() {
+  if (state.assignmentUnsubscribe) {
+    state.assignmentUnsubscribe();
+    state.assignmentUnsubscribe = null;
+  }
+
+  if (!firebaseConfigured || !db || !state.account) {
+    state.customAssignments = [];
+    renderAssignmentOptions();
+    renderCustomAssignmentList();
+    return;
+  }
+
+  state.assignmentUnsubscribe = onSnapshot(
+    collection(db, "assignments"),
+    (snapshot) => {
+      state.customAssignments = snapshot.docs
+        .map((assignmentDoc) => normalizeCustomAssignment(assignmentDoc.data(), assignmentDoc.id))
+        .filter(shouldShowCustomAssignment)
+        .sort((left, right) => left.title.localeCompare(right.title));
+
+      if (!getAllAssignments().some((assignment) => assignment.id === getSelectedAssignment().id)) {
+        state.selectedAssignment = assignments[0];
+      }
+
+      renderAssignmentOptions();
+      renderCustomAssignmentList();
+      updateAssignmentDisplay();
+      renderDashboard();
+    },
+    (error) => {
+      setBanner(
+        elements.teacherNote,
+        error.message || "Unable to load teacher-created assignments.",
+        "danger",
+      );
+    },
+  );
+}
+
+function renderAssignmentBuilderOptions() {
+  if (!elements.customAssignmentType) return;
+  elements.customAssignmentType.innerHTML = CUSTOM_ASSIGNMENT_TYPES.map(
+    (type) => `<option value="${type.id}">${escapeHtml(type.label)}</option>`,
+  ).join("");
+}
+
+function getCustomProblemCountInput() {
+  const selected = elements.customProblemCount?.value || "10";
+  if (selected === "custom") {
+    return normalizeProblemCount(elements.customProblemCountOther?.value || 10);
+  }
+  return normalizeProblemCount(selected);
+}
+
+function getCustomAssignmentPayload() {
+  const typeConfig = getAssignmentTypeConfig(elements.customAssignmentType?.value);
+  const title = elements.customAssignmentTitle?.value.trim() || typeConfig.label;
+  const problemCount = getCustomProblemCountInput();
+  const timeEnabled = elements.customTimeEnabled?.checked === true;
+  const assignmentId = `custom-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  return {
+    assignmentId,
+    isTeacherCreated: true,
+    teacherUid: state.account?.uid || "",
+    title,
+    assignmentType: typeConfig.id,
+    assignmentTypeLabel: typeConfig.label,
+    answerMode: typeConfig.answerMode,
+    directions: typeConfig.directions,
+    problemCount,
+    difficulty: elements.customDifficulty?.value || "mixed",
+    assignedClassIds: [elements.customClassPeriod?.value.trim() || "default"],
+    classPeriod: elements.customClassPeriod?.value.trim() || "Default class",
+    dueDate: elements.customDueDate?.value || "",
+    showImmediateFeedback: elements.customFeedbackMode?.value === "immediate",
+    allowRetries: elements.customAllowRetries?.checked === true,
+    maxAttempts: normalizeProblemCount(elements.customMaxAttempts?.value || 1),
+    timeLimitMinutes: timeEnabled ? normalizeProblemCount(elements.customTimeLimit?.value || 30) : 0,
+    resetKey: "initial",
+    active: true,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+}
+
+function renderCustomAssignmentList() {
+  if (!elements.customAssignmentList) return;
+  if (!state.customAssignments.length) {
+    elements.customAssignmentList.innerHTML = `<div class="empty-state compact-empty">No teacher-created assignments yet.</div>`;
+    return;
+  }
+
+  elements.customAssignmentList.innerHTML = state.customAssignments
+    .map(
+      (assignment) => `
+        <article class="assignment-card">
+          <div>
+            <p class="eyebrow">${escapeHtml(assignment.assignmentTypeLabel || assignment.assignmentType)}</p>
+            <h3>${escapeHtml(assignment.title)}</h3>
+            <p>${assignment.problemCount} problems - ${escapeHtml(assignment.difficulty)} - ${escapeHtml(
+              assignment.classPeriod || "Default class",
+            )}</p>
+          </div>
+          <span>${assignment.showImmediateFeedback ? "Immediate feedback" : "After submission"}</span>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+async function saveCustomAssignment() {
+  if (!state.account || !["teacher", "admin"].includes(state.account.role)) return;
+  if (!firebaseConfigured || !db) {
+    setBanner(elements.teacherNote, "Firebase is not configured for this deployment.", "danger");
+    return;
+  }
+
+  const payload = getCustomAssignmentPayload();
+  setDisabled(elements.saveAssignmentButton, true);
+  setBanner(elements.teacherNote, "Creating assignment...", "neutral");
+
+  try {
+    await setDoc(doc(db, "assignments", payload.assignmentId), payload, { merge: true });
+    const createdAssignment = normalizeCustomAssignment(payload, payload.assignmentId);
+    state.customAssignments = [
+      ...state.customAssignments.filter((assignment) => assignment.id !== createdAssignment.id),
+      createdAssignment,
+    ].sort((left, right) => left.title.localeCompare(right.title));
+    renderAssignmentOptions();
+    renderCustomAssignmentList();
+    setBanner(
+      elements.teacherNote,
+      `${payload.title} was created with ${payload.problemCount} problems.`,
+      "success",
+    );
+    if (elements.customAssignmentTitle) elements.customAssignmentTitle.value = "";
+    selectAssignment(payload.assignmentId);
+  } catch (error) {
+    setBanner(elements.teacherNote, error.message || "Unable to create assignment.", "danger");
+  } finally {
+    setDisabled(elements.saveAssignmentButton, false);
   }
 }
 
@@ -688,69 +1405,240 @@ async function loadSelectedStudent() {
   updateStudentScore();
 }
 
-function renderEquation(problem) {
-  if (problem.equations) {
-    return `<div class="system-equations">${problem.equations
-      .map((equation) => `<span>${equation}</span>`)
-      .join("")}</div>`;
+function getAnswerRowClass(problem) {
+  if (problem.answerMode === "pair") return "is-pair";
+  if (problem.answerMode === "slope") return "is-slope";
+  if (problem.answerMode === "slopeIntercept") return "is-slope-intercept";
+  if (problem.answerMode === "inequality") return "is-inequality";
+  if (problem.answerMode === "graphLine") return `is-graph-line is-graph-${problem.graphQuestion}`;
+  return "";
+}
+
+function renderProblemPrompt(problem) {
+  if (problem.answerMode === "graphLine") {
+    return `
+      <div class="graph-problem">
+        ${renderCoordinateGrid(problem)}
+        <div class="graph-prompt-stack">
+          <p>${escapeHtml(problem.equation)}</p>
+          ${renderMathTable(problem.table)}
+        </div>
+      </div>
+    `;
   }
 
-  return problem.equation;
+  if (problem.equations) {
+    return `<div class="system-equations">${problem.equations
+      .map((equation) => `<span>${escapeHtml(equation)}</span>`)
+      .join("")}</div>${renderMathTable(problem.table)}`;
+  }
+
+  return `${escapeHtml(problem.equation)}${renderMathTable(problem.table)}`;
 }
 
-function getSavedAnswer(problem, answerKey = "x") {
-  return state.answers.get(problem.id)?.[answerKey] || "";
+function renderMathTable(table) {
+  if (!table?.headers?.length || !Array.isArray(table.rows)) return "";
+  return `
+    <div class="math-table-wrap">
+      <table class="math-table">
+        <thead>
+          <tr>${table.headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}</tr>
+        </thead>
+        <tbody>
+          ${table.rows
+            .map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`)
+            .join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
 }
 
-function getProblemStatus(problem) {
-  if (isAssignmentLocked()) return "Locked";
-  return getProblemResult(problem) === "blank" ? "Blank" : "Saved";
+function renderCoordinateGrid(problem) {
+  const size = 260;
+  const center = size / 2;
+  const unit = 11;
+  const toSvgX = (value) => center + value * unit;
+  const toSvgY = (value) => center - value * unit;
+  const slope = problem.graph.slope;
+  const intercept = problem.graph.intercept;
+  const start = { x: -10, y: fractionToNumber(slope) * -10 + fractionToNumber(intercept) };
+  const end = { x: 10, y: fractionToNumber(slope) * 10 + fractionToNumber(intercept) };
+  const clipId = `grid-clip-${problem.id.replace(/[^a-zA-Z0-9-]/g, "-")}`;
+  const gridLines = [];
+  const tickLabels = [];
+
+  for (let value = -10; value <= 10; value += 1) {
+    const position = toSvgX(value);
+    const axisClass = value === 0 ? "grid-axis" : "grid-line";
+    gridLines.push(
+      `<line class="${axisClass}" x1="${position}" y1="${toSvgY(-10)}" x2="${position}" y2="${toSvgY(10)}" />`,
+      `<line class="${axisClass}" x1="${toSvgX(-10)}" y1="${position}" x2="${toSvgX(10)}" y2="${position}" />`,
+    );
+    if (value !== 0) {
+      tickLabels.push(
+        `<text class="x-tick" x="${toSvgX(value)}" y="${toSvgY(0) + 9}">${value}</text>`,
+        `<text class="y-tick" x="${toSvgX(0) - 5}" y="${toSvgY(value) + 2}">${value}</text>`,
+      );
+    }
+  }
+
+  return `
+    <figure class="coordinate-graph" aria-label="Coordinate grid from -10 to 10">
+      <svg viewBox="0 0 ${size} ${size}" role="img" aria-label="Line through (${problem.graph.points[0].x}, ${problem.graph.points[0].y}) and (${problem.graph.points[1].x}, ${problem.graph.points[1].y})">
+        <defs>
+          <clipPath id="${clipId}">
+            <rect x="${toSvgX(-10)}" y="${toSvgY(10)}" width="${unit * 20}" height="${unit * 20}" />
+          </clipPath>
+        </defs>
+        <rect class="grid-background" x="${toSvgX(-10)}" y="${toSvgY(10)}" width="${unit * 20}" height="${unit * 20}" />
+        ${gridLines.join("")}
+        <g class="axis-labels" aria-hidden="true">
+          <text x="${toSvgX(10) + 8}" y="${toSvgY(0) + 4}">x</text>
+          <text x="${toSvgX(0) + 5}" y="${toSvgY(10) - 6}">y</text>
+          ${tickLabels.join("")}
+        </g>
+        <g clip-path="url(#${clipId})">
+          <line
+            class="graph-line"
+            x1="${toSvgX(start.x)}"
+            y1="${toSvgY(start.y)}"
+            x2="${toSvgX(end.x)}"
+            y2="${toSvgY(end.y)}"
+          />
+        </g>
+        ${problem.graph.points
+          .map(
+            (point, index) => `
+              <g class="graph-point">
+                <circle cx="${toSvgX(point.x)}" cy="${toSvgY(point.y)}" r="3.1" />
+                <text x="${toSvgX(point.x) + 5}" y="${toSvgY(point.y) - 5}">${index === 0 ? "A" : "B"}</text>
+              </g>
+            `,
+          )
+          .join("")}
+      </svg>
+    </figure>
+  `;
 }
 
 function renderAnswerInputs(problem) {
   const lockedAttribute = isAssignmentLocked() ? "disabled" : "";
-  if (problem.answerType === "ordered-pair") {
+
+  if (problem.answerMode === "pair") {
     return `
       <label class="answer-field">
         <span>x</span>
-        <input
-          type="text"
-          inputmode="decimal"
-          aria-label="x value for problem ${problem.number}"
-          data-answer-input="${problem.id}"
-          data-answer-key="x"
-          value="${escapeHtml(getSavedAnswer(problem, "x"))}"
-          placeholder="x"
-          ${lockedAttribute}
-        />
+        <input type="text" inputmode="decimal" aria-label="x value for problem ${problem.number}" data-answer-input="${problem.id}" data-answer-key="x" placeholder="x" ${lockedAttribute} />
       </label>
       <label class="answer-field">
         <span>y</span>
-        <input
-          type="text"
-          inputmode="decimal"
-          aria-label="y value for problem ${problem.number}"
-          data-answer-input="${problem.id}"
-          data-answer-key="y"
-          value="${escapeHtml(getSavedAnswer(problem, "y"))}"
-          placeholder="y"
-          ${lockedAttribute}
-        />
+        <input type="text" inputmode="decimal" aria-label="y value for problem ${problem.number}" data-answer-input="${problem.id}" data-answer-key="y" placeholder="y" ${lockedAttribute} />
+      </label>
+    `;
+  }
+
+  if (problem.answerMode === "slope") {
+    return `
+      <label class="answer-field slope-kind-field">
+        <span>Type</span>
+        <select aria-label="Slope type for problem ${problem.number}" data-answer-input="${problem.id}" data-answer-key="kind" ${lockedAttribute}>
+          <option value="number">Number</option>
+          <option value="undefined">Undefined</option>
+        </select>
+      </label>
+      <label class="answer-field">
+        <span>Num.</span>
+        <input type="text" inputmode="numeric" aria-label="Slope numerator for problem ${problem.number}" data-answer-input="${problem.id}" data-answer-key="numerator" placeholder="rise" ${lockedAttribute} />
+      </label>
+      <label class="answer-field">
+        <span>Den.</span>
+        <input type="text" inputmode="numeric" aria-label="Slope denominator for problem ${problem.number}" data-answer-input="${problem.id}" data-answer-key="denominator" placeholder="run" ${lockedAttribute} />
+      </label>
+    `;
+  }
+
+  if (problem.answerMode === "slopeIntercept") {
+    return `
+      <label class="answer-field">
+        <span>m</span>
+        <input type="text" inputmode="text" aria-label="Slope m for problem ${problem.number}" data-answer-input="${problem.id}" data-answer-key="m" placeholder="m" ${lockedAttribute} />
+      </label>
+      <label class="answer-field">
+        <span>b</span>
+        <input type="text" inputmode="text" aria-label="Y-intercept b for problem ${problem.number}" data-answer-input="${problem.id}" data-answer-key="b" placeholder="b" ${lockedAttribute} />
+      </label>
+    `;
+  }
+
+  if (problem.answerMode === "inequality") {
+    return `
+      <label class="answer-field">
+        <span>x</span>
+        <select aria-label="Inequality symbol for problem ${problem.number}" data-answer-input="${problem.id}" data-answer-key="symbol" ${lockedAttribute}>
+          <option value="<">&lt;</option>
+          <option value=">">&gt;</option>
+          <option value="<=">&lt;=</option>
+          <option value=">=">&gt;=</option>
+        </select>
+      </label>
+      <label class="answer-field">
+        <span>Boundary</span>
+        <input type="text" inputmode="numeric" aria-label="Boundary number for problem ${problem.number}" data-answer-input="${problem.id}" data-answer-key="boundary" placeholder="number" ${lockedAttribute} />
+      </label>
+    `;
+  }
+
+  if (problem.answerMode === "graphLine") {
+    if (problem.graphQuestion === "slope") {
+      return `
+        <label class="answer-field">
+          <span>Rise</span>
+          <input type="text" inputmode="numeric" aria-label="Slope numerator for problem ${problem.number}" data-answer-input="${problem.id}" data-answer-key="numerator" placeholder="num." ${lockedAttribute} />
+        </label>
+        <label class="answer-field">
+          <span>Run</span>
+          <input type="text" inputmode="numeric" aria-label="Slope denominator for problem ${problem.number}" data-answer-input="${problem.id}" data-answer-key="denominator" placeholder="den." ${lockedAttribute} />
+        </label>
+      `;
+    }
+
+    if (problem.graphQuestion === "intercept") {
+      return `
+        <label class="answer-field">
+          <span>b</span>
+          <input type="text" inputmode="text" aria-label="Y-intercept for problem ${problem.number}" data-answer-input="${problem.id}" data-answer-key="b" placeholder="b" ${lockedAttribute} />
+        </label>
+      `;
+    }
+
+    if (problem.graphQuestion === "point") {
+      return `
+        <label class="answer-field">
+          <span>x</span>
+          <input type="text" inputmode="numeric" aria-label="x-coordinate for a point on problem ${problem.number}" data-answer-input="${problem.id}" data-answer-key="x" placeholder="x" ${lockedAttribute} />
+        </label>
+        <label class="answer-field">
+          <span>y</span>
+          <input type="text" inputmode="numeric" aria-label="y-coordinate for a point on problem ${problem.number}" data-answer-input="${problem.id}" data-answer-key="y" placeholder="y" ${lockedAttribute} />
+        </label>
+      `;
+    }
+
+    return `
+      <label class="answer-field">
+        <span>m</span>
+        <input type="text" inputmode="text" aria-label="Slope m for problem ${problem.number}" data-answer-input="${problem.id}" data-answer-key="m" placeholder="m" ${lockedAttribute} />
+      </label>
+      <label class="answer-field">
+        <span>b</span>
+        <input type="text" inputmode="text" aria-label="Y-intercept b for problem ${problem.number}" data-answer-input="${problem.id}" data-answer-key="b" placeholder="b" ${lockedAttribute} />
       </label>
     `;
   }
 
   return `
-    <input
-      type="text"
-      inputmode="decimal"
-      aria-label="Answer for problem ${problem.number}"
-      data-answer-input="${problem.id}"
-      data-answer-key="x"
-      value="${escapeHtml(getSavedAnswer(problem))}"
-      placeholder="${getSelectedAssignment().answerPlaceholder}"
-      ${lockedAttribute}
-    />
+    <input type="text" inputmode="decimal" aria-label="Answer for problem ${problem.number}" data-answer-input="${problem.id}" data-answer-key="x" placeholder="${getSelectedAssignment().answerPlaceholder}" ${lockedAttribute} />
   `;
 }
 
@@ -767,8 +1655,11 @@ function renderProblems() {
       (problem) => `
         <article class="problem-card" data-problem-id="${problem.id}">
           <span class="problem-number">${problem.number}</span>
-          <div class="equation">${renderEquation(problem)}</div>
-          <div class="answer-row ${problem.answerType === "ordered-pair" ? "is-pair" : ""}">
+          <div>
+            <div class="problem-type">${escapeHtml(problem.type || getSelectedAssignment().title)}</div>
+            <div class="equation">${renderProblemPrompt(problem)}</div>
+          </div>
+          <div class="answer-row ${getAnswerRowClass(problem)}">
             ${renderAnswerInputs(problem)}
             <span class="feedback" data-feedback="${problem.id}">${getProblemStatus(problem)}</span>
           </div>
@@ -778,17 +1669,32 @@ function renderProblems() {
     .join("");
 
   elements.problemList.querySelectorAll("[data-answer-input]").forEach((input) => {
-    input.addEventListener("input", handleAnswerInput);
+    const savedAnswer = state.answers.get(input.dataset.answerInput);
+    const answerKey = input.dataset.answerKey || "x";
+    const savedValue =
+      savedAnswer && typeof savedAnswer === "object"
+        ? savedAnswer[answerKey] || ""
+        : savedAnswer || "";
+    input.value =
+      input.tagName === "SELECT" && !savedValue
+        ? answerKey === "kind"
+          ? "number"
+          : "<"
+        : savedValue;
+    input.addEventListener(input.tagName === "SELECT" ? "change" : "input", handleAnswerInput);
   });
+
+  state.problems.forEach((problem) => updateProblemStatus(problem.id));
 }
 
 function handleAnswerInput(event) {
   const input = event.currentTarget;
   const problemId = input.dataset.answerInput;
   const answerKey = input.dataset.answerKey || "x";
-  const answer = state.answers.get(problemId) || {};
-  answer[answerKey] = input.value.trim();
-  state.answers.set(problemId, answer);
+  const answer = state.answers.get(problemId);
+  const nextAnswer = answer && typeof answer === "object" ? { ...answer } : {};
+  nextAnswer[answerKey] = input.value.trim();
+  state.answers.set(problemId, nextAnswer);
   updateProblemStatus(problemId);
   updateStudentScore();
 }
@@ -797,21 +1703,69 @@ function isBlank(value) {
   return value === undefined || value === "";
 }
 
+function hasAnswerForProblem(problem, answers = state.answers) {
+  const answer = answers.get(problem.id);
+
+  if (problem.answerMode === "pair") {
+    const xValue = answer && typeof answer === "object" ? answer.x : "";
+    const yValue = answer && typeof answer === "object" ? answer.y : "";
+    return !isBlank(xValue) || !isBlank(yValue);
+  }
+
+  if (problem.answerMode === "slope") {
+    const kind = answer && typeof answer === "object" ? answer.kind : "";
+    const numerator = answer && typeof answer === "object" ? answer.numerator : "";
+    const denominator = answer && typeof answer === "object" ? answer.denominator : "";
+    return kind === "undefined" || !isBlank(numerator) || !isBlank(denominator);
+  }
+
+  if (problem.answerMode === "slopeIntercept") {
+    const mValue = answer && typeof answer === "object" ? answer.m : "";
+    const bValue = answer && typeof answer === "object" ? answer.b : "";
+    return !isBlank(mValue) || !isBlank(bValue);
+  }
+
+  if (problem.answerMode === "inequality") {
+    const symbol = answer && typeof answer === "object" ? answer.symbol : "";
+    const boundary = answer && typeof answer === "object" ? answer.boundary : "";
+    return !isBlank(symbol) || !isBlank(boundary);
+  }
+
+  if (problem.answerMode === "graphLine") {
+    const response = answer && typeof answer === "object" ? answer : {};
+    if (problem.graphQuestion === "slope") {
+      return !isBlank(response.numerator) || !isBlank(response.denominator);
+    }
+    if (problem.graphQuestion === "intercept") {
+      return !isBlank(response.b);
+    }
+    if (problem.graphQuestion === "point") {
+      return !isBlank(response.x) || !isBlank(response.y);
+    }
+    return !isBlank(response.m) || !isBlank(response.b);
+  }
+
+  const rawAnswer = answer && typeof answer === "object" ? answer.x : answer;
+  return !isBlank(rawAnswer);
+}
+
 function isCloseEnough(actual, expected) {
   return Math.abs(actual - expected) < ANSWER_TOLERANCE;
 }
 
-function getProblemResult(problem) {
-  const answer = state.answers.get(problem.id) || {};
+function getProblemResult(problem, answers = state.answers) {
+  const answer = answers.get(problem.id);
 
-  if (problem.answerType === "ordered-pair") {
-    if (isBlank(answer.x) && isBlank(answer.y)) {
+  if (problem.answerMode === "pair") {
+    const xValue = answer && typeof answer === "object" ? answer.x : "";
+    const yValue = answer && typeof answer === "object" ? answer.y : "";
+    if (isBlank(xValue) && isBlank(yValue)) {
       return "blank";
     }
 
-    const x = Number(answer.x);
-    const y = Number(answer.y);
-    if (isBlank(answer.x) || isBlank(answer.y) || !Number.isFinite(x) || !Number.isFinite(y)) {
+    const x = Number(xValue);
+    const y = Number(yValue);
+    if (isBlank(xValue) || isBlank(yValue) || !Number.isFinite(x) || !Number.isFinite(y)) {
       return "wrong";
     }
 
@@ -820,11 +1774,148 @@ function getProblemResult(problem) {
       : "wrong";
   }
 
-  if (isBlank(answer.x)) {
+  if (problem.answerMode === "slope") {
+    const kind = answer && typeof answer === "object" ? answer.kind || "number" : "number";
+    const numeratorValue = answer && typeof answer === "object" ? answer.numerator : "";
+    const denominatorValue = answer && typeof answer === "object" ? answer.denominator : "";
+
+    if (kind === "undefined") {
+      return problem.answer.kind === "undefined" ? "correct" : "wrong";
+    }
+
+    if (isBlank(numeratorValue) && isBlank(denominatorValue)) {
+      return "blank";
+    }
+
+    const numerator = Number(numeratorValue);
+    const denominator = Number(denominatorValue);
+    if (
+      isBlank(numeratorValue) ||
+      isBlank(denominatorValue) ||
+      !Number.isInteger(numerator) ||
+      !Number.isInteger(denominator) ||
+      denominator === 0
+    ) {
+      return "wrong";
+    }
+
+    if (problem.answer.kind === "undefined") {
+      return "wrong";
+    }
+
+    const reduced = reduceFraction(numerator, denominator);
+    return reduced.numerator === problem.answer.numerator &&
+      reduced.denominator === problem.answer.denominator
+      ? "correct"
+      : "wrong";
+  }
+
+  if (problem.answerMode === "slopeIntercept") {
+    const mValue = answer && typeof answer === "object" ? answer.m : "";
+    const bValue = answer && typeof answer === "object" ? answer.b : "";
+    if (isBlank(mValue) && isBlank(bValue)) {
+      return "blank";
+    }
+
+    const mAnswer = parseFractionInput(mValue);
+    const bAnswer = parseFractionInput(bValue);
+    if (isBlank(mValue) || isBlank(bValue) || !mAnswer || !bAnswer) {
+      return "wrong";
+    }
+
+    return fractionsEqual(mAnswer, problem.answer.m) && fractionsEqual(bAnswer, problem.answer.b)
+      ? "correct"
+      : "wrong";
+  }
+
+  if (problem.answerMode === "inequality") {
+    const symbol = answer && typeof answer === "object" ? answer.symbol : "";
+    const boundaryValue = answer && typeof answer === "object" ? answer.boundary : "";
+    if (isBlank(symbol) && isBlank(boundaryValue)) {
+      return "blank";
+    }
+
+    const boundary = Number(boundaryValue);
+    if (
+      isBlank(symbol) ||
+      isBlank(boundaryValue) ||
+      !["<", ">", "<=", ">="].includes(symbol) ||
+      !Number.isInteger(boundary)
+    ) {
+      return "wrong";
+    }
+
+    return symbol === problem.answer.symbol && boundary === problem.answer.boundary
+      ? "correct"
+      : "wrong";
+  }
+
+  if (problem.answerMode === "graphLine") {
+    const response = answer && typeof answer === "object" ? answer : {};
+
+    if (problem.graphQuestion === "slope") {
+      const numeratorValue = response.numerator;
+      const denominatorValue = response.denominator;
+      if (isBlank(numeratorValue) && isBlank(denominatorValue)) return "blank";
+
+      const numerator = Number(numeratorValue);
+      const denominator = Number(denominatorValue);
+      if (
+        isBlank(numeratorValue) ||
+        isBlank(denominatorValue) ||
+        !Number.isInteger(numerator) ||
+        !Number.isInteger(denominator) ||
+        denominator === 0
+      ) {
+        return "wrong";
+      }
+
+      return fractionsEqual(reduceFraction(numerator, denominator), problem.answer.slope)
+        ? "correct"
+        : "wrong";
+    }
+
+    if (problem.graphQuestion === "intercept") {
+      if (isBlank(response.b)) return "blank";
+      const bAnswer = parseFractionInput(response.b);
+      return bAnswer && fractionsEqual(bAnswer, problem.answer.b) ? "correct" : "wrong";
+    }
+
+    if (problem.graphQuestion === "point") {
+      if (isBlank(response.x) && isBlank(response.y)) return "blank";
+      const x = Number(response.x);
+      const y = Number(response.y);
+      if (
+        isBlank(response.x) ||
+        isBlank(response.y) ||
+        !Number.isInteger(x) ||
+        !Number.isInteger(y)
+      ) {
+        return "wrong";
+      }
+      const expectedY =
+        fractionToNumber(problem.graph.slope) * x + fractionToNumber(problem.graph.intercept);
+      return isCloseEnough(y, expectedY) ? "correct" : "wrong";
+    }
+
+    if (isBlank(response.m) && isBlank(response.b)) return "blank";
+    const mAnswer = parseFractionInput(response.m);
+    const bAnswer = parseFractionInput(response.b);
+    if (isBlank(response.m) || isBlank(response.b) || !mAnswer || !bAnswer) {
+      return "wrong";
+    }
+
+    return fractionsEqual(mAnswer, problem.answer.m) && fractionsEqual(bAnswer, problem.answer.b)
+      ? "correct"
+      : "wrong";
+  }
+
+  const rawAnswer = answer && typeof answer === "object" ? answer.x : answer;
+  if (isBlank(rawAnswer)) {
     return "blank";
   }
 
-  const numericAnswer = Number(answer.x);
+  const numericAnswer = Number(rawAnswer);
   if (!Number.isFinite(numericAnswer)) {
     return "wrong";
   }
@@ -832,19 +1923,39 @@ function getProblemResult(problem) {
   return isCloseEnough(numericAnswer, problem.answer) ? "correct" : "wrong";
 }
 
+function getProblemStatus(problem) {
+  const result = getProblemResult(problem);
+  const shouldRevealGrade =
+    isAssignmentLocked() || getSelectedAssignment().showImmediateFeedback === true;
+
+  if (!shouldRevealGrade) {
+    return hasAnswerForProblem(problem) ? "Saved" : "Blank";
+  }
+
+  if (result === "correct") return "Correct";
+  if (result === "wrong") return "Incorrect";
+  return "Blank";
+}
+
 function updateProblemStatus(problemId) {
   if (!elements.problemList) return;
 
   const problem = state.problems.find((item) => item.id === problemId);
+  const card = elements.problemList.querySelector(`[data-problem-id="${problemId}"]`);
   const feedback = elements.problemList.querySelector(`[data-feedback="${problemId}"]`);
   if (!problem || !feedback) return;
 
+  const result = getProblemResult(problem);
+  const shouldRevealGrade =
+    isAssignmentLocked() || getSelectedAssignment().showImmediateFeedback === true;
+  card?.classList.toggle("is-correct", shouldRevealGrade && result === "correct");
+  card?.classList.toggle("is-wrong", shouldRevealGrade && result === "wrong");
   feedback.textContent = getProblemStatus(problem);
 }
 
 function calculateScore() {
   const assignment = getSelectedAssignment();
-  const answered = state.problems.filter((problem) => getProblemResult(problem) !== "blank").length;
+  const answered = state.problems.filter((problem) => hasAnswerForProblem(problem)).length;
   const correct = state.problems.filter((problem) => getProblemResult(problem) === "correct").length;
   return {
     answered,
@@ -864,7 +1975,7 @@ function updateStudentScore() {
   }
 
   const assignment = getSelectedAssignment();
-  const answered = state.problems.filter((problem) => getProblemResult(problem) !== "blank").length;
+  const answered = state.problems.filter((problem) => hasAnswerForProblem(problem)).length;
 
   if (!state.problems.length) {
     elements.currentScore.textContent = `0 / ${assignment.problemCount}`;
@@ -1075,6 +2186,21 @@ function bindEvents() {
   if (elements.resetDashboard) {
     elements.resetDashboard.addEventListener("click", resetDashboard);
   }
+  if (elements.saveAssignmentButton) {
+    elements.saveAssignmentButton.addEventListener("click", saveCustomAssignment);
+  }
+  if (elements.customProblemCount) {
+    elements.customProblemCount.addEventListener("change", () => {
+      if (elements.customProblemCountOther) {
+        elements.customProblemCountOther.hidden = elements.customProblemCount.value !== "custom";
+      }
+    });
+  }
+  if (elements.customTimeEnabled) {
+    elements.customTimeEnabled.addEventListener("change", () => {
+      setDisabled(elements.customTimeLimit, !elements.customTimeEnabled.checked);
+    });
+  }
 
   if (elements.dashboardBody) {
     window.addEventListener("storage", (event) => {
@@ -1095,12 +2221,14 @@ function bindEvents() {
 }
 
 function init() {
+  renderAssignmentBuilderOptions();
   renderAssignmentOptions();
   updateAssignmentDisplay();
   renderStudentAccess();
   renderProblems();
   updateStudentScore();
   renderDashboard();
+  renderCustomAssignmentList();
   bindEvents();
 }
 
@@ -1120,12 +2248,19 @@ export function mountAssignmentDashboard(options = {}) {
   state.visibleStudentKeys = Array.isArray(options.visibleStudentKeys)
     ? options.visibleStudentKeys
     : null;
+  state.customAssignments = [];
+  state.account = options.account || null;
   init();
+  subscribeCustomAssignments();
 
   return () => {
     if (dashboardRefreshTimer) {
       window.clearInterval(dashboardRefreshTimer);
       dashboardRefreshTimer = null;
+    }
+    if (state.assignmentUnsubscribe) {
+      state.assignmentUnsubscribe();
+      state.assignmentUnsubscribe = null;
     }
   };
 }
