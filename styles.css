@@ -163,7 +163,8 @@ button:focus-visible {
 
 .primary-button,
 .submit-button,
-.secondary-button {
+.secondary-button,
+.danger-button {
   min-height: 43px;
   border-radius: 6px;
   border: 1px solid transparent;
@@ -194,6 +195,16 @@ button:focus-visible {
 
 .secondary-button:hover {
   background: var(--surface-strong);
+}
+
+.danger-button {
+  background: #fff;
+  border-color: rgba(180, 59, 69, 0.36);
+  color: var(--bad);
+}
+
+.danger-button:hover {
+  background: var(--bad-soft);
 }
 
 .score-box {
@@ -245,6 +256,86 @@ button:focus-visible {
   overflow: hidden;
 }
 
+.assignment-builder {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.builder-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.builder-heading h2,
+.builder-heading p {
+  margin: 0;
+}
+
+.builder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.builder-grid label {
+  display: grid;
+  gap: 6px;
+}
+
+.builder-grid label span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.check-field {
+  align-content: end;
+  grid-template-columns: auto 1fr;
+  min-height: 70px;
+}
+
+.check-field input {
+  width: 18px;
+  height: 18px;
+}
+
+.custom-assignment-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.assignment-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.assignment-card h3,
+.assignment-card p {
+  margin: 0;
+}
+
+.assignment-card > span {
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.compact-empty {
+  min-height: 82px;
+}
+
 .assignment-toolbar {
   display: flex;
   justify-content: space-between;
@@ -273,6 +364,121 @@ button:focus-visible {
   gap: 4px;
 }
 
+.graph-problem {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+}
+
+.graph-problem p {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.graph-prompt-stack {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.math-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.math-table {
+  width: max-content;
+  min-width: 190px;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  background: #fff;
+}
+
+.math-table th,
+.math-table td {
+  min-width: 48px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  text-align: center;
+}
+
+.math-table th {
+  color: var(--muted);
+  background: var(--surface-strong);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+}
+
+.coordinate-graph {
+  margin: 0;
+  width: min(100%, 340px);
+  max-width: 340px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(20, 114, 116, 0.04);
+}
+
+.coordinate-graph svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.grid-background {
+  fill: #fbfdfd;
+}
+
+.grid-line {
+  stroke: #dce6e7;
+  stroke-width: 0.8;
+}
+
+.grid-axis {
+  stroke: #52636a;
+  stroke-width: 1.6;
+}
+
+.axis-labels {
+  fill: #56676f;
+  font-size: 6.5px;
+  font-weight: 850;
+  pointer-events: none;
+}
+
+.axis-labels > text:first-child,
+.axis-labels > text:nth-child(2) {
+  font-size: 10px;
+}
+
+.x-tick {
+  text-anchor: middle;
+}
+
+.y-tick {
+  text-anchor: end;
+}
+
+.graph-line {
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-width: 3.5;
+}
+
+.graph-point circle {
+  fill: #ffffff;
+  stroke: var(--accent-dark);
+  stroke-width: 1.8;
+}
+
+.graph-point text {
+  fill: var(--ink);
+  font-size: 9.5px;
+  font-weight: 900;
+}
+
 .problem-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(285px, 1fr));
@@ -296,7 +502,7 @@ button:focus-visible {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 10px 12px;
-  min-height: 150px;
+  min-height: 164px;
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -312,6 +518,14 @@ button:focus-visible {
   background: #edf2f5;
   color: var(--muted);
   font-weight: 900;
+}
+
+.problem-type {
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 850;
+  text-transform: uppercase;
 }
 
 .equation {
@@ -330,12 +544,34 @@ button:focus-visible {
   align-items: center;
 }
 
-.answer-row input {
+.answer-row input,
+.answer-row select {
   min-width: 0;
 }
 
 .answer-row.is-pair {
   grid-template-columns: minmax(78px, 1fr) minmax(78px, 1fr) minmax(110px, auto);
+}
+
+.answer-row.is-slope {
+  grid-template-columns:
+    minmax(112px, 0.9fr)
+    minmax(92px, 0.75fr)
+    minmax(92px, 0.75fr)
+    minmax(110px, auto);
+}
+
+.answer-row.is-slope-intercept,
+.answer-row.is-graph-line {
+  grid-template-columns: minmax(90px, 1fr) minmax(90px, 1fr) minmax(110px, auto);
+}
+
+.answer-row.is-graph-intercept {
+  grid-template-columns: minmax(120px, 180px) minmax(110px, auto);
+}
+
+.answer-row.is-inequality {
+  grid-template-columns: minmax(90px, 0.75fr) minmax(140px, 1fr) minmax(110px, auto);
 }
 
 .answer-field {
@@ -360,6 +596,16 @@ button:focus-visible {
   background: #f3f6f8;
   font-weight: 900;
   text-align: center;
+}
+
+.problem-card.is-correct {
+  border-color: rgba(17, 116, 70, 0.35);
+  background: var(--good-soft);
+}
+
+.problem-card.is-wrong {
+  border-color: rgba(180, 59, 69, 0.35);
+  background: var(--bad-soft);
 }
 
 .dashboard-grid {
@@ -493,6 +739,10 @@ tbody tr:hover {
   .summary-metrics {
     grid-template-columns: 1fr;
   }
+
+  .graph-problem {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 520px) {
@@ -518,7 +768,12 @@ tbody tr:hover {
     grid-template-columns: 1fr;
   }
 
-  .answer-row.is-pair {
+  .answer-row.is-pair,
+  .answer-row.is-slope,
+  .answer-row.is-slope-intercept,
+  .answer-row.is-graph-line,
+  .answer-row.is-graph-intercept,
+  .answer-row.is-inequality {
     grid-template-columns: 1fr;
   }
 }
